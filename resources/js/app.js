@@ -17,6 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
             legend: {
                 rtl: isRtl,
                 textDirection: isRtl ? "rtl" : "ltr",
+                labels: { boxWidth: 10, boxHeight: 10 },
             },
             tooltip: {
                 rtl: isRtl,
@@ -25,27 +26,34 @@ document.addEventListener("DOMContentLoaded", () => {
         },
     };
 
+    // -----------------------
+    // Daily (Line)
+    // -----------------------
     const dailyEl = document.getElementById("dailyChart");
     if (dailyEl) {
-        // اجعل ارتفاع الكانفس ثابت بصرياً
-        dailyEl.parentElement.style.height = "180px";
+        dailyEl.parentElement.style.height = "190px";
 
         new Chart(dailyEl, {
             type: "line",
             data: {
-                labels: window.__dashboard.dailyLabels,
+                labels: window.__dashboard.dailyLabels || [],
                 datasets: [
                     {
-                        label: "Paid",
-                        data: window.__dashboard.dailyValues,
+                        label: window.__dashboard.paidLabel || "Paid",
+                        data: window.__dashboard.dailyValues || [],
                         tension: 0.35,
                         fill: false,
+                        pointRadius: 2,
+                        pointHoverRadius: 4,
                     },
                 ],
             },
             options: {
                 ...common,
-                plugins: { ...common.plugins, legend: { display: false } },
+                plugins: {
+                    ...common.plugins,
+                    legend: { display: false },
+                },
                 scales: {
                     x: {
                         grid: { display: false },
@@ -60,6 +68,9 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // -----------------------
+    // Status (Doughnut)
+    // -----------------------
     const statusEl = document.getElementById("statusChart");
     if (statusEl) {
         statusEl.parentElement.style.height = "220px";
@@ -67,8 +78,15 @@ document.addEventListener("DOMContentLoaded", () => {
         new Chart(statusEl, {
             type: "doughnut",
             data: {
-                labels: window.__dashboard.statusLabels,
-                datasets: [{ data: window.__dashboard.statusValues }],
+                labels: window.__dashboard.statusLabels || [],
+                datasets: [
+                    {
+                        data: window.__dashboard.statusValues || [],
+                        // ألوان هادئة ومناسبة للإدارة (emerald/amber/rose)
+                        backgroundColor: ["#10b981", "#f59e0b", "#f43f5e"],
+                        borderWidth: 0,
+                    },
+                ],
             },
             options: {
                 ...common,

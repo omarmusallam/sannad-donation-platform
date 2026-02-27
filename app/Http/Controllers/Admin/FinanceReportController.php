@@ -7,26 +7,64 @@ use App\Models\Campaign;
 use App\Services\FinanceReports\FinanceReportService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class FinanceReportController extends Controller
 {
-    public function __construct(private FinanceReportService $service) {}
+    public function __construct(private FinanceReportService $service)
+    {
+        // حماية جميع صفحات التقارير المالية
+        $this->middleware('permission:finance_reports.view')->only([
+            'index',
+            'monthly',
+            'campaign',
+            'gateway',
+            'currency',
+            'status',
+            'paymentMethod',
+        ]);
+    }
 
     public function index()
     {
         return view('admin.finance-reports.index');
     }
 
+    /**
+     * Range helper (safe + validated)
+     */
     private function range(Request $request): array
     {
-        $from = $request->filled('from') ? Carbon::parse($request->from)->startOfDay() : now()->startOfMonth();
-        $to   = $request->filled('to')   ? Carbon::parse($request->to)->endOfDay()     : now()->endOfDay();
+        // Validation خفيف يمنع parse errors
+        Validator::make($request->all(), [
+            'from' => ['nullable', 'date'],
+            'to'   => ['nullable', 'date'],
+        ])->validate();
+
+        $from = $request->filled('from')
+            ? Carbon::parse($request->input('from'))->startOfDay()
+            : now()->startOfMonth();
+
+        $to = $request->filled('to')
+            ? Carbon::parse($request->input('to'))->endOfDay()
+            : now()->endOfDay();
+
+        // ضمان منطقي: from <= to
+        if ($from->gt($to)) {
+            [$from, $to] = [$to->copy()->startOfDay(), $from->copy()->endOfDay()];
+        }
+
         return [$from, $to];
     }
 
     public function monthly(Request $request)
     {
-        $year = (int) ($request->year ?? now()->year);
+        $validated = $request->validate([
+            'year' => ['nullable', 'integer', 'min:2000', 'max:2100'],
+        ]);
+
+        $year = (int) ($validated['year'] ?? now()->year);
+
         $rows = $this->service->byMonth($year);
 
         return view('admin.finance-reports.monthly', compact('year', 'rows'));
@@ -34,11 +72,17 @@ class FinanceReportController extends Controller
 
     public function campaign(Request $request)
     {
+        $validated = $request->validate([
+            'campaign_id' => ['nullable', 'integer', 'exists:campaigns,id'],
+        ]);
+
         [$from, $to] = $this->range($request);
 
-        $campaignId = $request->campaign_id ? (int) $request->campaign_id : null;
+        $campaignId = !empty($validated['campaign_id']) ? (int) $validated['campaign_id'] : null;
+
         $kpis = $this->service->kpis($from, $to, $campaignId);
 
+        // لو تم اختيار حملة، لا نحتاج جدول جميع الحملات
         $rows = $campaignId ? null : $this->service->byCampaign($from, $to);
 
         $campaigns = Campaign::query()
@@ -46,12 +90,20 @@ class FinanceReportController extends Controller
             ->orderByDesc('id')
             ->get();
 
-        return view('admin.finance-reports.campaign', compact('from', 'to', 'campaignId', 'kpis', 'rows', 'campaigns'));
+        return view('admin.finance-reports.campaign', compact(
+            'from',
+            'to',
+            'campaignId',
+            'kpis',
+            'rows',
+            'campaigns'
+        ));
     }
 
     public function gateway(Request $request)
     {
         [$from, $to] = $this->range($request);
+
         $kpis = $this->service->kpis($from, $to);
         $rows = $this->service->byGateway($from, $to);
 
@@ -61,6 +113,7 @@ class FinanceReportController extends Controller
     public function currency(Request $request)
     {
         [$from, $to] = $this->range($request);
+
         $kpis = $this->service->kpis($from, $to);
         $rows = $this->service->byCurrency($from, $to);
 
@@ -70,6 +123,7 @@ class FinanceReportController extends Controller
     public function status(Request $request)
     {
         [$from, $to] = $this->range($request);
+
         $rows = $this->service->byStatus($from, $to);
 
         return view('admin.finance-reports.status', compact('from', 'to', 'rows'));
@@ -78,6 +132,7 @@ class FinanceReportController extends Controller
     public function paymentMethod(Request $request)
     {
         [$from, $to] = $this->range($request);
+
         $rows = $this->service->byPaymentMethod($from, $to);
 
         return view('admin.finance-reports.payment-method', compact('from', 'to', 'rows'));

@@ -4,13 +4,15 @@
 @section('page_title', 'الحملات')
 
 @section('page_actions')
-    <a href="{{ route('admin.campaigns.create') }}"
-        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-black text-white text-sm font-semibold hover:opacity-95 active:opacity-90 transition shadow-sm">
-        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-        </svg>
-        إضافة حملة
-    </a>
+    @can('campaigns.create')
+        <a href="{{ route('admin.campaigns.create') }}"
+            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 active:opacity-90 transition shadow-sm">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+            إضافة حملة
+        </a>
+    @endcan
 @endsection
 
 @section('content')
@@ -113,7 +115,7 @@
 
                                             @if ($c->is_featured)
                                                 <span
-                                                    class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-black text-white">
+                                                    class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-slate-900 text-white">
                                                     <span class="w-1.5 h-1.5 rounded-full bg-white/80"></span>
                                                     مميزة
                                                 </span>
@@ -152,7 +154,8 @@
                                     </div>
 
                                     <div class="h-2.5 bg-slate-100 rounded-full overflow-hidden ring-1 ring-slate-200">
-                                        <div class="h-2.5 bg-black rounded-full" style="width: {{ $pct }}%"></div>
+                                        <div class="h-2.5 bg-slate-900 rounded-full" style="width: {{ $pct }}%">
+                                        </div>
                                     </div>
 
                                     <div class="flex items-center justify-between text-xs text-slate-500">
@@ -182,43 +185,51 @@
                             {{-- Actions --}}
                             <td class="p-4 md:p-5">
                                 <div class="flex flex-wrap items-center gap-2">
-                                    <a href="{{ route('admin.campaigns.edit', $c) }}"
-                                        class="inline-flex items-center gap-2 px-3 py-2 rounded-2xl border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
-                                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                            <path d="M12 20h9" stroke="currentColor" stroke-width="2"
-                                                stroke-linecap="round" />
-                                            <path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"
-                                                stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                                        </svg>
-                                        تعديل
-                                    </a>
 
-                                    <a href="{{ route('admin.campaigns.updates.index', $c) }}"
-                                        class="inline-flex items-center gap-2 px-3 py-2 rounded-2xl border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
-                                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                            <path d="M4 19h16M7 16V7m5 9V5m5 11v-8" stroke="currentColor" stroke-width="2"
-                                                stroke-linecap="round" />
-                                        </svg>
-                                        تحديثات
-                                    </a>
-
-                                    <form method="POST" action="{{ route('admin.campaigns.destroy', $c) }}"
-                                        onsubmit="return confirm('هل أنت متأكد من حذف الحملة؟');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit"
-                                            class="inline-flex items-center gap-2 px-3 py-2 rounded-2xl border border-rose-200 bg-rose-50 text-rose-700 text-sm font-semibold hover:bg-rose-100 transition">
+                                    @can('campaigns.edit')
+                                        <a href="{{ route('admin.campaigns.edit', $c) }}"
+                                            class="inline-flex items-center gap-2 px-3 py-2 rounded-2xl border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
                                             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                                <path d="M3 6h18" stroke="currentColor" stroke-width="2"
+                                                <path d="M12 20h9" stroke="currentColor" stroke-width="2"
                                                     stroke-linecap="round" />
-                                                <path d="M8 6V4h8v2" stroke="currentColor" stroke-width="2"
-                                                    stroke-linecap="round" />
-                                                <path d="M6 6l1 16h10l1-16" stroke="currentColor" stroke-width="2"
+                                                <path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"
+                                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                                            </svg>
+                                            تعديل
+                                        </a>
+                                    @endcan
+
+                                    @can('campaign_updates.view')
+                                        <a href="{{ route('admin.campaigns.updates.index', $c) }}"
+                                            class="inline-flex items-center gap-2 px-3 py-2 rounded-2xl border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
+                                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                                <path d="M4 19h16M7 16V7m5 9V5m5 11v-8" stroke="currentColor" stroke-width="2"
                                                     stroke-linecap="round" />
                                             </svg>
-                                            حذف
-                                        </button>
-                                    </form>
+                                            تحديثات
+                                        </a>
+                                    @endcan
+
+                                    @can('campaigns.delete')
+                                        <form method="POST" action="{{ route('admin.campaigns.destroy', $c) }}"
+                                            onsubmit="return confirm('هل أنت متأكد من حذف الحملة؟');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit"
+                                                class="inline-flex items-center gap-2 px-3 py-2 rounded-2xl border border-rose-200 bg-rose-50 text-rose-700 text-sm font-semibold hover:bg-rose-100 transition">
+                                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                                    <path d="M3 6h18" stroke="currentColor" stroke-width="2"
+                                                        stroke-linecap="round" />
+                                                    <path d="M8 6V4h8v2" stroke="currentColor" stroke-width="2"
+                                                        stroke-linecap="round" />
+                                                    <path d="M6 6l1 16h10l1-16" stroke="currentColor" stroke-width="2"
+                                                        stroke-linecap="round" />
+                                                </svg>
+                                                حذف
+                                            </button>
+                                        </form>
+                                    @endcan
+
                                 </div>
                             </td>
                         </tr>
@@ -236,15 +247,19 @@
                                                 stroke-width="2" />
                                         </svg>
                                     </div>
+
                                     <div class="mt-4 text-slate-900 font-semibold">لا توجد حملات بعد</div>
                                     <div class="mt-1 text-sm text-slate-500">ابدأ بإضافة حملة جديدة ثم تابع التقدم من هنا.
                                     </div>
-                                    <div class="mt-5">
-                                        <a href="{{ route('admin.campaigns.create') }}"
-                                            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-black text-white text-sm font-semibold hover:opacity-95 transition">
-                                            إضافة حملة
-                                        </a>
-                                    </div>
+
+                                    @can('campaigns.create')
+                                        <div class="mt-5">
+                                            <a href="{{ route('admin.campaigns.create') }}"
+                                                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition">
+                                                إضافة حملة
+                                            </a>
+                                        </div>
+                                    @endcan
                                 </div>
                             </td>
                         </tr>

@@ -17,21 +17,12 @@
 
         $meta = $statusMeta($donation->status);
 
-        $kv = function ($label, $value, $mono = false, $muted = false) {
-            return [
-                'label' => $label,
-                'value' => $value,
-                'mono' => $mono,
-                'muted' => $muted,
-            ];
-        };
-
         $donorName = $donation->is_anonymous ? 'مجهول' : ($donation->donor_name ?: '-');
         $donorPrivacy = $donation->is_anonymous ? 'تبرع مجهول' : 'اسم ظاهر';
 
         $receipt = $donation->receipt ?? null;
         $hasReceipt = (bool) $receipt;
-        $canGenerateReceipt = $donation->status === 'paid';
+        $canGenerateReceiptByStatus = $donation->status === 'paid';
     @endphp
 
     <div class="mx-auto max-w-6xl">
@@ -68,7 +59,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {{-- Main --}}
             <div class="lg:col-span-8 space-y-6">
-                {{-- Donation summary (top quick cards) --}}
+                {{-- Donation summary --}}
                 <div class="bg-white border border-slate-200 rounded-[28px] p-5 md:p-6 shadow-sm">
                     <div class="flex flex-col gap-1 mb-5">
                         <div class="text-base font-semibold text-slate-900">بيانات التبرع</div>
@@ -100,12 +91,11 @@
                         <div class="p-4 rounded-2xl bg-white border border-slate-200">
                             <div class="text-xs text-slate-500">Created</div>
                             <div class="mt-1 font-semibold text-slate-900">
-                                {{ $donation->created_at->format('Y-m-d H:i') }}
+                                {{ $donation->created_at?->format('Y-m-d H:i') }}
                             </div>
                         </div>
                     </div>
 
-                    {{-- Extra meta row (optional useful for admins) --}}
                     <div class="mt-5 pt-5 border-t border-slate-200">
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
                             <div class="p-4 rounded-2xl border border-slate-200">
@@ -117,7 +107,7 @@
 
                             <div class="p-4 rounded-2xl border border-slate-200">
                                 <div class="text-xs text-slate-500">Reference</div>
-                                <div class="mt-1 font-semibold text-slate-900 font-mono break-all">
+                                <div class="mt-1 font-semibold text-slate-900 font-mono break-all" dir="ltr">
                                     {{ $donation->provider_ref ?: '-' }}
                                 </div>
                             </div>
@@ -141,19 +131,21 @@
                         </div>
 
                         @if ($donation->campaign)
-                            <a href="{{ route('admin.campaigns.edit', $donation->campaign) }}"
-                                class="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-2xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">
-                                إدارة الحملة
-                            </a>
+                            @can('campaigns.edit')
+                                <a href="{{ route('admin.campaigns.edit', $donation->campaign) }}"
+                                    class="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-2xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">
+                                    إدارة الحملة
+                                </a>
+                            @endcan
                         @endif
                     </div>
 
                     <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50/70">
                         <div class="font-semibold text-slate-900">
-                            {{ $donation->campaign->title_ar ?? '-' }}
+                            {{ $donation->campaign?->title_ar ?? ($donation->campaign?->title ?? '-') }}
                         </div>
                         <div class="text-xs text-slate-500 mt-1">
-                            Campaign ID: <span class="font-mono">{{ $donation->campaign_id }}</span>
+                            Campaign ID: <span class="font-mono">{{ $donation->campaign_id ?? '-' }}</span>
                         </div>
                     </div>
                 </div>
@@ -236,89 +228,102 @@
 
                     <div class="mt-4 space-y-3 text-sm">
                         @if ($hasReceipt)
-                            <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50/70">
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <div>
-                                        <div class="text-xs text-slate-500">رقم الإيصال</div>
-                                        <div class="mt-1 font-semibold text-slate-900 font-mono break-all" dir="ltr">
-                                            {{ $receipt->receipt_no }}
+                            @can('receipts.view')
+                                <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50/70">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                            <div class="text-xs text-slate-500">رقم الإيصال</div>
+                                            <div class="mt-1 font-semibold text-slate-900 font-mono break-all" dir="ltr">
+                                                {{ $receipt->receipt_no }}
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <div class="text-xs text-slate-500">تاريخ الإصدار</div>
+                                            <div class="mt-1 font-semibold text-slate-900" dir="ltr">
+                                                {{ $receipt->issued_at?->format('Y-m-d H:i') ?? '-' }}
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div>
-                                        <div class="text-xs text-slate-500">تاريخ الإصدار</div>
-                                        <div class="mt-1 font-semibold text-slate-900" dir="ltr">
-                                            {{ $receipt->issued_at?->format('Y-m-d H:i') ?? '-' }}
+                                    <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                            <div class="text-xs text-slate-500">الحالة</div>
+                                            <div class="mt-1 font-semibold text-slate-900">
+                                                {{ $receipt->status ?? '-' }}
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <div class="text-xs text-slate-500">PDF</div>
+                                            <div class="mt-1 font-semibold text-slate-900">
+                                                {{ $receipt->pdf_path ? 'متوفر' : 'غير متوفر' }}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <div>
-                                        <div class="text-xs text-slate-500">الحالة</div>
-                                        <div class="mt-1 font-semibold text-slate-900">
-                                            {{ $receipt->status ?? '-' }}
-                                        </div>
-                                    </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <a href="{{ route('admin.receipts.download', $receipt) }}"
+                                        class="inline-flex items-center justify-center px-4 py-2.5 rounded-2xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition">
+                                        تحميل PDF
+                                    </a>
 
-                                    <div>
-                                        <div class="text-xs text-slate-500">PDF</div>
-                                        <div class="mt-1 font-semibold text-slate-900">
-                                            {{ $receipt->pdf_path ? 'متوفر' : 'غير متوفر' }}
-                                        </div>
-                                    </div>
+                                    <a href="{{ route('receipt.verify', $receipt->uuid) }}" target="_blank" rel="noopener"
+                                        class="inline-flex items-center justify-center px-4 py-2.5 rounded-2xl border border-slate-200 bg-white text-slate-700 text-sm font-semibold hover:bg-slate-50 transition">
+                                        فتح التحقق
+                                    </a>
                                 </div>
-                            </div>
 
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                <a href="{{ route('admin.receipts.download', $receipt) }}"
-                                    class="inline-flex items-center justify-center px-4 py-2.5 rounded-2xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition">
-                                    تحميل PDF
-                                </a>
-
-                                <a href="{{ route('receipt.verify', $receipt->uuid) }}" target="_blank" rel="noopener"
-                                    class="inline-flex items-center justify-center px-4 py-2.5 rounded-2xl border border-slate-200 bg-white text-slate-700 text-sm font-semibold hover:bg-slate-50 transition">
-                                    فتح التحقق
-                                </a>
-                            </div>
-
-                            {{-- Optional: quick copy verify url --}}
-                            <div class="p-4 rounded-2xl border border-slate-200">
-                                <div class="text-xs text-slate-500 mb-2">رابط التحقق</div>
-                                <div class="flex items-center gap-2">
-                                    <div class="flex-1 min-w-0">
-                                        <div class="text-xs font-mono text-slate-700 break-all" dir="ltr">
-                                            {{ route('receipt.verify', $receipt->uuid) }}
+                                <div class="p-4 rounded-2xl border border-slate-200">
+                                    <div class="text-xs text-slate-500 mb-2">رابط التحقق</div>
+                                    <div class="flex items-center gap-2">
+                                        <div class="flex-1 min-w-0">
+                                            <div class="text-xs font-mono text-slate-700 break-all" dir="ltr">
+                                                {{ route('receipt.verify', $receipt->uuid) }}
+                                            </div>
                                         </div>
+                                        <button type="button"
+                                            class="shrink-0 inline-flex items-center justify-center px-3 py-2 rounded-2xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                                            onclick="navigator.clipboard?.writeText(@js(route('receipt.verify', $receipt->uuid)))">
+                                            نسخ
+                                        </button>
                                     </div>
-                                    <button type="button"
-                                        class="shrink-0 inline-flex items-center justify-center px-3 py-2 rounded-2xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
-                                        onclick="navigator.clipboard?.writeText(@js(route('receipt.verify', $receipt->uuid)))">
-                                        نسخ
-                                    </button>
-                                </div>
-                            </div>
-                        @else
-                            @if ($canGenerateReceipt)
-                                <form method="POST" action="{{ route('admin.donations.generateReceipt', $donation) }}">
-                                    @csrf
-                                    <button type="submit"
-                                        class="w-full inline-flex items-center justify-center px-4 py-2.5 rounded-2xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition">
-                                        توليد إيصال
-                                    </button>
-                                </form>
-
-                                <div class="text-xs text-slate-500 leading-6">
-                                    سيتم إنشاء إيصال رسمي وربطه بالتبرع تلقائيًا.
                                 </div>
                             @else
                                 <div class="p-4 rounded-2xl border border-amber-200 bg-amber-50 text-amber-800 leading-6">
-                                    لا يمكن توليد إيصال لأن حالة التبرع ليست <b>مدفوع</b>.
+                                    لا تملك صلاحية عرض بيانات الإيصال.
                                 </div>
-                            @endif
+                            @endcan
+                        @else
+                            {{-- No receipt --}}
+                            @can('receipts.create')
+                                @if ($canGenerateReceiptByStatus)
+                                    <form method="POST" action="{{ route('admin.donations.generateReceipt', $donation) }}">
+                                        @csrf
+                                        <button type="submit"
+                                            class="w-full inline-flex items-center justify-center px-4 py-2.5 rounded-2xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition">
+                                            توليد إيصال
+                                        </button>
+                                    </form>
+
+                                    <div class="text-xs text-slate-500 leading-6">
+                                        سيتم إنشاء إيصال رسمي وربطه بالتبرع تلقائيًا.
+                                    </div>
+                                @else
+                                    <div class="p-4 rounded-2xl border border-amber-200 bg-amber-50 text-amber-800 leading-6">
+                                        لا يمكن توليد إيصال لأن حالة التبرع ليست <b>مدفوع</b>.
+                                    </div>
+                                @endif
+                            @else
+                                <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 leading-6">
+                                    لا تملك صلاحية توليد الإيصالات.
+                                </div>
+                            @endcan
                         @endif
                     </div>
                 </div>
+
             </div>
         </div>
     </div>

@@ -28,9 +28,8 @@
         $fullTitle = trim($pageTitle . ' - ' . $metaTitle);
 
         /**
-         * NAV as "route base" (important):
-         * - For resources: admin.roles (will match admin.roles.*)
-         * - For single routes: admin.home
+         * NAV:
+         * - use `can` for all items to avoid links showing then 403
          */
         $nav = [
             [
@@ -38,19 +37,21 @@
                 'base' => 'admin.home',
                 'href' => 'admin.home',
                 'icon' => 'home',
+                'can' => 'dashboard.view',
             ],
-
             [
                 'label' => $isAr ? 'الحملات' : 'Campaigns',
                 'base' => 'admin.campaigns',
                 'href' => 'admin.campaigns.index',
                 'icon' => 'flag',
+                'can' => 'campaigns.view',
             ],
             [
                 'label' => $isAr ? 'التبرعات' : 'Donations',
                 'base' => 'admin.donations',
                 'href' => 'admin.donations.index',
                 'icon' => 'money',
+                'can' => 'donations.view',
             ],
             [
                 'label' => $isAr ? 'الإيصالات' : 'Receipts',
@@ -64,6 +65,7 @@
                 'base' => 'admin.reports',
                 'href' => 'admin.reports.index',
                 'icon' => 'doc',
+                'can' => 'reports.view',
             ],
             [
                 'label' => $isAr ? 'التقارير المالية' : 'Finance Reports',
@@ -102,9 +104,8 @@
             ],
         ];
 
-        // Active check: matches ANY nested route under base
+        // Active check
         $isActive = function (string $base): bool {
-            // home is a single route, keep it exact
             if ($base === 'admin.home') {
                 return request()->routeIs('admin.home');
             }
@@ -214,14 +215,13 @@
                 @foreach ($nav as $item)
                     @php
                         $active = $isActive($item['base']);
+                        $can = $item['can'] ?? null;
                     @endphp
 
-                    @if (empty($item['can']))
+                    @if (!$can || auth()->user()?->can($can))
                         <a href="{{ route($item['href']) }}" @class([
                             'group flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm transition relative overflow-hidden',
-                            // Active style (global, premium look)
                             'text-white shadow-sm' => $active,
-                            // Inactive style
                             'text-slate-700 hover:bg-slate-50' => !$active,
                         ])
                             @if ($active) aria-current="page" @endif>
@@ -234,7 +234,7 @@
 
                             <span
                                 class="relative inline-flex items-center justify-center w-9 h-9 rounded-2xl
-                            {{ $active ? 'bg-white/10 ring-1 ring-white/15' : 'bg-slate-100 group-hover:bg-slate-200' }}">
+                                {{ $active ? 'bg-white/10 ring-1 ring-white/15' : 'bg-slate-100 group-hover:bg-slate-200' }}">
                                 <span
                                     class="{{ $active ? 'text-white' : 'text-slate-700' }}">{!! $icon($item['icon']) !!}</span>
                             </span>
@@ -248,38 +248,6 @@
                                 </span>
                             @endif
                         </a>
-                    @else
-                        @can($item['can'])
-                            <a href="{{ route($item['href']) }}" @class([
-                                'group flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm transition relative overflow-hidden',
-                                'text-white shadow-sm' => $active,
-                                'text-slate-700 hover:bg-slate-50' => !$active,
-                            ])
-                                @if ($active) aria-current="page" @endif>
-                                @if ($active)
-                                    <span
-                                        class="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800"></span>
-                                    <span
-                                        class="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_30%_20%,white,transparent_40%)]"></span>
-                                @endif
-
-                                <span
-                                    class="relative inline-flex items-center justify-center w-9 h-9 rounded-2xl
-                                {{ $active ? 'bg-white/10 ring-1 ring-white/15' : 'bg-slate-100 group-hover:bg-slate-200' }}">
-                                    <span
-                                        class="{{ $active ? 'text-white' : 'text-slate-700' }}">{!! $icon($item['icon']) !!}</span>
-                                </span>
-
-                                <span class="relative font-semibold">{{ $item['label'] }}</span>
-
-                                @if ($active)
-                                    <span
-                                        class="relative ms-auto text-xs px-2 py-1 rounded-full bg-white/10 ring-1 ring-white/15">
-                                        {{ $isAr ? 'نشط' : 'Active' }}
-                                    </span>
-                                @endif
-                            </a>
-                        @endcan
                     @endif
                 @endforeach
             </nav>

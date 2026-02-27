@@ -56,8 +56,8 @@
             </div>
 
             <div class="flex items-center gap-2">
-                <button
-                    class="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-black text-white text-sm font-semibold hover:opacity-95 transition shadow-sm">
+                <button type="submit"
+                    class="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition shadow-sm">
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                         <path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                     </svg>
@@ -129,10 +129,10 @@
                             <td class="p-4 md:p-5">
                                 <div class="min-w-0">
                                     <div class="font-semibold text-slate-900 truncate">
-                                        {{ $d->campaign->title_ar }}
+                                        {{ $d->campaign?->title_ar ?? ($d->campaign?->title ?? '—') }}
                                     </div>
                                     <div class="text-xs text-slate-500 mt-1">
-                                        Campaign ID: <span class="font-mono">{{ $d->campaign_id }}</span>
+                                        Campaign ID: <span class="font-mono">{{ $d->campaign_id ?? '—' }}</span>
                                     </div>
                                 </div>
                             </td>
@@ -142,7 +142,7 @@
                                     <div class="font-semibold text-slate-900">
                                         {{ $d->is_anonymous ? 'مجهول' : ($d->donor_name ?: '-') }}
                                     </div>
-                                    <div class="text-xs text-slate-500 mt-1 truncate">
+                                    <div class="text-xs text-slate-500 mt-1 truncate" dir="ltr">
                                         {{ $d->donor_email ?: '—' }}
                                     </div>
                                 </div>
@@ -164,10 +164,10 @@
 
                             <td class="p-4 md:p-5 text-slate-600">
                                 <div class="font-medium text-slate-900">
-                                    {{ $d->created_at->format('Y-m-d') }}
+                                    {{ $d->created_at?->format('Y-m-d') }}
                                 </div>
                                 <div class="text-xs text-slate-500 mt-1">
-                                    {{ $d->created_at->format('H:i') }}
+                                    {{ $d->created_at?->format('H:i') }}
                                 </div>
                             </td>
 
@@ -200,7 +200,7 @@
                                     <div class="mt-1 text-sm text-slate-500">جرّب تعديل الفلاتر أو امسحها لعرض الكل.</div>
                                     <div class="mt-5">
                                         <a href="{{ route('admin.donations.index') }}"
-                                            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-black text-white text-sm font-semibold hover:opacity-95 transition">
+                                            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition">
                                             عرض كل التبرعات
                                         </a>
                                     </div>

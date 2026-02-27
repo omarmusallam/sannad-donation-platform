@@ -17,11 +17,18 @@
             </a>
         </div>
 
-        <form method="POST" action="{{ route('admin.campaigns.update', $campaign) }}" enctype="multipart/form-data">
-            @csrf
-            @method('PUT')
+        @can('campaigns.edit')
+            <form method="POST" action="{{ route('admin.campaigns.update', $campaign) }}" enctype="multipart/form-data">
+                @csrf
+                @method('PUT')
 
-            @include('admin.campaigns._form')
-        </form>
+                @include('admin.campaigns._form')
+            </form>
+        @else
+            <div class="rounded-3xl border border-rose-200 bg-rose-50 p-6 text-rose-900">
+                <div class="font-bold">غير مسموح</div>
+                <div class="text-sm mt-1">لا تملك صلاحية تعديل الحملات.</div>
+            </div>
+        @endcan
     </div>
 @endsection

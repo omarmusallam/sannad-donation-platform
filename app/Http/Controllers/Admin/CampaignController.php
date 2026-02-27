@@ -5,19 +5,30 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Campaign;
 use App\Models\Donation;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class CampaignController extends Controller
 {
+    public function __construct()
+    {
+        // Dashboard
+        $this->middleware('permission:dashboard.view')->only(['dashboard']);
+
+        // Campaigns
+        $this->middleware('permission:campaigns.view')->only(['index']);
+        $this->middleware('permission:campaigns.create')->only(['create', 'store']);
+        $this->middleware('permission:campaigns.edit')->only(['edit', 'update']);
+        $this->middleware('permission:campaigns.delete')->only(['destroy']);
+    }
 
     public function dashboard()
     {
-        $totalDonations = Donation::count();
-        $totalPaid = (float) Donation::where('status', 'paid')->sum('amount');
-        $activeCampaigns = Campaign::where('status', 'active')->count();
+        $totalDonations   = Donation::count();
+        $totalPaid        = (float) Donation::where('status', 'paid')->sum('amount');
+        $activeCampaigns  = Campaign::where('status', 'active')->count();
 
         $topCampaign = Campaign::withSum(
             ['donations as total_collected' => fn($q) => $q->where('status', 'paid')],
@@ -29,7 +40,6 @@ class CampaignController extends Controller
             ->limit(8)
             ->get();
 
-        // إضافات احترافية
         $todayPaid = (float) Donation::where('status', 'paid')
             ->whereDate('created_at', Carbon::today())
             ->sum('amount');
@@ -45,13 +55,14 @@ class CampaignController extends Controller
             ->toArray();
 
         $statusCounts = [
-            'paid' => (int) ($statusCountsRaw['paid'] ?? 0),
+            'paid'    => (int) ($statusCountsRaw['paid'] ?? 0),
             'pending' => (int) ($statusCountsRaw['pending'] ?? 0),
-            'failed' => (int) ($statusCountsRaw['failed'] ?? 0),
+            'failed'  => (int) ($statusCountsRaw['failed'] ?? 0),
         ];
 
-        // سلسلة آخر 14 يوم (مدفوع)
+        // آخر 14 يوم (مدفوع)
         $from = Carbon::today()->subDays(13);
+
         $daily = Donation::where('status', 'paid')
             ->whereDate('created_at', '>=', $from)
             ->selectRaw('DATE(created_at) as d, SUM(amount) as s')
@@ -73,7 +84,6 @@ class CampaignController extends Controller
             'values' => $values,
         ];
 
-        // Series status
         $statusSeries = [
             'labels' => ['paid', 'pending', 'failed'],
             'values' => [$statusCounts['paid'], $statusCounts['pending'], $statusCounts['failed']],
@@ -118,20 +128,26 @@ class CampaignController extends Controller
         $data = $this->validateData($request);
 
         $data['is_featured'] = $request->boolean('is_featured');
-        $data['slug'] = Campaign::makeSlug($data['title_en'] ?: $data['title_ar']);
+
+        // ضمان وجود slug دائمًا
+        $titleForSlug = $data['title_en'] ?: $data['title_ar'];
+        $data['slug'] = Campaign::makeSlug($titleForSlug);
+
         $data['created_by'] = auth()->id();
 
-        if ($request->hasFile('cover_image')) {
-            $data['cover_image_path'] = $request->file('cover_image')
-                ->store('campaigns', 'public');
-        }
+        DB::transaction(function () use ($request, &$data) {
+            if ($request->hasFile('cover_image')) {
+                $data['cover_image_path'] = $request->file('cover_image')
+                    ->store('campaigns', 'public');
+            }
 
-        Campaign::create($data);
+            Campaign::create($data);
+        });
 
-        return redirect()->route('admin.campaigns.index')
+        return redirect()
+            ->route('admin.campaigns.index')
             ->with('success', 'تم إنشاء الحملة بنجاح');
     }
-
 
     public function edit(Campaign $campaign)
     {
@@ -142,54 +158,64 @@ class CampaignController extends Controller
     {
         $data = $this->validateData($request);
 
-        // checkbox: لو ما انبعثت لازم نحولها false
+        // checkbox: لو ما انبعثت لازم تتحول false
         $data['is_featured'] = $request->boolean('is_featured');
 
-        if ($request->hasFile('cover_image')) {
+        DB::transaction(function () use ($request, $campaign, &$data) {
+            if ($request->hasFile('cover_image')) {
+                // خزّن الجديدة أولًا (أمانًا)
+                $newPath = $request->file('cover_image')->store('campaigns', 'public');
+                $oldPath = $campaign->cover_image_path;
 
-            // احذف الصورة القديمة إن وجدت
-            if ($campaign->cover_image_path) {
-                Storage::disk('public')->delete($campaign->cover_image_path);
+                $data['cover_image_path'] = $newPath;
+
+                $campaign->update($data);
+
+                // احذف القديمة بعد نجاح التحديث
+                if ($oldPath) {
+                    Storage::disk('public')->delete($oldPath);
+                }
+
+                return;
             }
 
-            // خزّن الجديدة
-            $data['cover_image_path'] = $request->file('cover_image')
-                ->store('campaigns', 'public');
-        }
+            $campaign->update($data);
+        });
 
-        $campaign->update($data);
-
-        return redirect()->route('admin.campaigns.index')
+        return redirect()
+            ->route('admin.campaigns.index')
             ->with('success', 'تم تحديث الحملة بنجاح');
     }
 
-
     public function destroy(Campaign $campaign)
     {
-        if ($campaign->cover_image_path) {
-            Storage::disk('public')->delete($campaign->cover_image_path);
-        }
+        DB::transaction(function () use ($campaign) {
+            $path = $campaign->cover_image_path;
 
-        $campaign->delete();
+            $campaign->delete();
+
+            // حذف الصورة بعد حذف السجل (أحيانًا أفضل للفصل بين البيانات والملفات)
+            if ($path) {
+                Storage::disk('public')->delete($path);
+            }
+        });
 
         return back()->with('success', 'تم حذف الحملة');
     }
 
-
     private function validateData(Request $request): array
     {
         return $request->validate([
-            'title_ar' => 'required|string|max:255',
-            'title_en' => 'nullable|string|max:255',
-            'description_ar' => 'nullable|string',
-            'description_en' => 'nullable|string',
-            'goal_amount' => 'required|numeric|min:0',
-            // 'current_amount' => 'nullable|numeric|min:0',
-            'currency' => 'required|string|max:3',
-            'status' => 'required|in:draft,active,paused,ended,archived',
-            'is_featured' => 'nullable|boolean',
-            'priority' => 'nullable|integer|min:0',
-            'cover_image' => 'nullable|image|max:2048',
+            'title_ar'        => 'required|string|max:255',
+            'title_en'        => 'nullable|string|max:255',
+            'description_ar'  => 'nullable|string',
+            'description_en'  => 'nullable|string',
+            'goal_amount'     => 'required|numeric|min:0',
+            'currency'        => 'required|string|max:3',
+            'status'          => 'required|in:draft,active,paused,ended,archived',
+            'is_featured'     => 'nullable|boolean',
+            'priority'        => 'nullable|integer|min:0',
+            'cover_image'     => 'nullable|image|max:2048',
         ]);
     }
 }

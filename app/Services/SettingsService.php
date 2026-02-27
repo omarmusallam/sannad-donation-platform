@@ -16,7 +16,7 @@ class SettingsService
                 return match ($row->type) {
                     'boolean' => filter_var($row->value, FILTER_VALIDATE_BOOLEAN),
                     'integer' => (int) $row->value,
-                    'json'    => json_decode($row->value ?? 'null', true),
+                    'json'    => json_decode($row->value ?: '[]', true) ?: [],
                     default   => $row->value,
                 };
             })->toArray();

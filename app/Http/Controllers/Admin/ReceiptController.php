@@ -6,16 +6,29 @@ use App\Http\Controllers\Controller;
 use App\Models\Receipt;
 use App\Services\ReceiptPdfService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class ReceiptController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:receipts.view')->only(['index', 'download']);
+        $this->middleware('permission:receipts.create')->only(['regenerate']);
+    }
+
     public function index(Request $request)
     {
+        $validated = $request->validate([
+            'search' => ['nullable', 'string', 'max:150'],
+            'status' => ['nullable', 'string', 'max:30'],
+            'currency' => ['nullable', 'string', 'max:10'],
+        ]);
+
         $query = Receipt::query()->with('donation');
 
-        // Search
-        if ($search = $request->get('search')) {
+        if (!empty($validated['search'])) {
+            $search = trim($validated['search']);
             $query->where(function ($q) use ($search) {
                 $q->where('receipt_no', 'like', "%{$search}%")
                     ->orWhere('donor_email', 'like', "%{$search}%")
@@ -23,14 +36,12 @@ class ReceiptController extends Controller
             });
         }
 
-        // Status filter
-        if ($status = $request->get('status')) {
-            $query->where('status', $status);
+        if (!empty($validated['status'])) {
+            $query->where('status', $validated['status']);
         }
 
-        // Currency filter
-        if ($currency = $request->get('currency')) {
-            $query->where('currency', $currency);
+        if (!empty($validated['currency'])) {
+            $query->where('currency', $validated['currency']);
         }
 
         $receipts = $query
@@ -43,17 +54,34 @@ class ReceiptController extends Controller
 
     public function download(Receipt $receipt)
     {
-        if (!$receipt->pdf_path || !Storage::disk('public')->exists($receipt->pdf_path)) {
+        $disk = Storage::disk('public');
+
+        if (!$receipt->pdf_path || !$disk->exists($receipt->pdf_path)) {
             abort(404);
         }
 
-        return Storage::disk('public')->download($receipt->pdf_path);
+        $filename = $receipt->receipt_no
+            ? "receipt-{$receipt->receipt_no}.pdf"
+            : "receipt-{$receipt->id}.pdf";
+
+        return $disk->download($receipt->pdf_path, $filename);
     }
 
     public function regenerate(Receipt $receipt, ReceiptPdfService $pdfService)
     {
-        $path = $pdfService->buildAndStore($receipt);
-        $receipt->update(['pdf_path' => $path]);
+        DB::transaction(function () use ($receipt, $pdfService) {
+            $oldPath = $receipt->pdf_path;
+
+            // يبني ويحفظ ملف جديد
+            $newPath = $pdfService->buildAndStore($receipt);
+
+            $receipt->update(['pdf_path' => $newPath]);
+
+            // احذف القديم بعد نجاح التحديث
+            if ($oldPath && $oldPath !== $newPath) {
+                Storage::disk('public')->delete($oldPath);
+            }
+        });
 
         return back()->with('success', 'تم إعادة توليد الإيصال بنجاح.');
     }

@@ -23,145 +23,84 @@ Route::prefix('admin')
     ->name('admin.')
     ->group(function () {
 
+        /*
+        |----------------------------------------------------------------------
+        | Dashboard
+        |----------------------------------------------------------------------
+        */
         Route::get('/', [AdminCampaignController::class, 'dashboard'])
-            ->middleware('permission:dashboard.view')
             ->name('home');
 
         /*
-        |--------------------------------------------------------------------------
+        |----------------------------------------------------------------------
         | Campaigns
-        |--------------------------------------------------------------------------
+        |----------------------------------------------------------------------
         */
-        Route::get('campaigns', [AdminCampaignController::class, 'index'])
-            ->middleware('permission:campaigns.view')
-            ->name('campaigns.index');
-
-        Route::get('campaigns/create', [AdminCampaignController::class, 'create'])
-            ->middleware('permission:campaigns.create')
-            ->name('campaigns.create');
-
-        Route::post('campaigns', [AdminCampaignController::class, 'store'])
-            ->middleware('permission:campaigns.create')
-            ->name('campaigns.store');
-
-        Route::get('campaigns/{campaign}/edit', [AdminCampaignController::class, 'edit'])
-            ->middleware('permission:campaigns.edit')
-            ->name('campaigns.edit');
-
-        Route::put('campaigns/{campaign}', [AdminCampaignController::class, 'update'])
-            ->middleware('permission:campaigns.edit')
-            ->name('campaigns.update');
-
-        Route::delete('campaigns/{campaign}', [AdminCampaignController::class, 'destroy'])
-            ->middleware('permission:campaigns.delete')
-            ->name('campaigns.destroy');
+        Route::get('campaigns', [AdminCampaignController::class, 'index'])->name('campaigns.index');
+        Route::get('campaigns/create', [AdminCampaignController::class, 'create'])->name('campaigns.create');
+        Route::post('campaigns', [AdminCampaignController::class, 'store'])->name('campaigns.store');
+        Route::get('campaigns/{campaign}/edit', [AdminCampaignController::class, 'edit'])->name('campaigns.edit');
+        Route::put('campaigns/{campaign}', [AdminCampaignController::class, 'update'])->name('campaigns.update');
+        Route::delete('campaigns/{campaign}', [AdminCampaignController::class, 'destroy'])->name('campaigns.destroy');
 
         /*
-        |--------------------------------------------------------------------------
+        |----------------------------------------------------------------------
         | Pages
-        |--------------------------------------------------------------------------
+        |----------------------------------------------------------------------
         */
-        Route::resource('pages', AdminPageController::class)
-            ->except(['show'])
-            ->middleware('permission:pages.view|pages.create|pages.edit|pages.delete');
+        Route::resource('pages', AdminPageController::class)->except(['show']);
 
         /*
-        |--------------------------------------------------------------------------
+        |----------------------------------------------------------------------
         | Campaign Updates
-        |--------------------------------------------------------------------------
+        |----------------------------------------------------------------------
         */
         Route::prefix('campaigns/{campaign}/updates')->name('campaigns.updates.')->group(function () {
-            Route::get('/', [AdminCampaignUpdateController::class, 'index'])
-                ->middleware('permission:campaign_updates.view')
-                ->name('index');
-
-            Route::get('/create', [AdminCampaignUpdateController::class, 'create'])
-                ->middleware('permission:campaign_updates.create')
-                ->name('create');
-
-            Route::post('/', [AdminCampaignUpdateController::class, 'store'])
-                ->middleware('permission:campaign_updates.create')
-                ->name('store');
-
-            Route::get('/{update}/edit', [AdminCampaignUpdateController::class, 'edit'])
-                ->middleware('permission:campaign_updates.edit')
-                ->name('edit');
-
-            Route::put('/{update}', [AdminCampaignUpdateController::class, 'update'])
-                ->middleware('permission:campaign_updates.edit')
-                ->name('update');
-
-            Route::delete('/{update}', [AdminCampaignUpdateController::class, 'destroy'])
-                ->middleware('permission:campaign_updates.delete')
-                ->name('destroy');
+            Route::get('/', [AdminCampaignUpdateController::class, 'index'])->name('index');
+            Route::get('/create', [AdminCampaignUpdateController::class, 'create'])->name('create');
+            Route::post('/', [AdminCampaignUpdateController::class, 'store'])->name('store');
+            Route::get('/{update}/edit', [AdminCampaignUpdateController::class, 'edit'])->name('edit');
+            Route::put('/{update}', [AdminCampaignUpdateController::class, 'update'])->name('update');
+            Route::delete('/{update}', [AdminCampaignUpdateController::class, 'destroy'])->name('destroy');
         });
 
         /*
-        |--------------------------------------------------------------------------
+        |----------------------------------------------------------------------
         | Donations
-        |--------------------------------------------------------------------------
+        |----------------------------------------------------------------------
         */
-        Route::get('donations', [AdminDonationController::class, 'index'])
-            ->middleware('permission:donations.view')
-            ->name('donations.index');
-
-        Route::get('donations/{donation}', [AdminDonationController::class, 'show'])
-            ->middleware('permission:donations.view')
-            ->name('donations.show');
-
+        Route::get('donations', [AdminDonationController::class, 'index'])->name('donations.index');
+        Route::get('donations/{donation}', [AdminDonationController::class, 'show'])->name('donations.show');
         Route::post('donations/{donation}/receipt', [AdminDonationController::class, 'generateReceipt'])
-            ->middleware('permission:receipts.create')
             ->name('donations.generateReceipt');
 
         /*
-        |--------------------------------------------------------------------------
-        | Receipts (ADMIN)
-        |--------------------------------------------------------------------------
+        |----------------------------------------------------------------------
+        | Receipts
+        |----------------------------------------------------------------------
         */
-        Route::get('/receipts', [AdminReceiptController::class, 'index'])
-            ->middleware('permission:receipts.view')
-            ->name('receipts.index');
-
-        Route::post('/receipts/{receipt}/regenerate', [AdminReceiptController::class, 'regenerate'])
-            ->middleware('permission:receipts.create')
-            ->name('receipts.regenerate');
-
-        Route::get('/receipts/{receipt}/download', [AdminReceiptController::class, 'download'])
-            ->middleware('permission:receipts.view')
-            ->name('receipts.download');
+        Route::get('receipts', [AdminReceiptController::class, 'index'])->name('receipts.index');
+        Route::post('receipts/{receipt}/regenerate', [AdminReceiptController::class, 'regenerate'])->name('receipts.regenerate');
+        Route::get('receipts/{receipt}/download', [AdminReceiptController::class, 'download'])->name('receipts.download');
 
         /*
-        |--------------------------------------------------------------------------
+        |----------------------------------------------------------------------
         | Reports
-        |--------------------------------------------------------------------------
+        |----------------------------------------------------------------------
         */
-        Route::get('reports', [AdminReportController::class, 'index'])
-            ->middleware('permission:reports.view')
-            ->name('reports.index');
+        Route::get('reports', [AdminReportController::class, 'index'])->name('reports.index');
+        Route::get('reports/create', [AdminReportController::class, 'create'])->name('reports.create');
+        Route::post('reports', [AdminReportController::class, 'store'])->name('reports.store');
+        Route::get('reports/{report}/edit', [AdminReportController::class, 'edit'])->name('reports.edit');
+        Route::put('reports/{report}', [AdminReportController::class, 'update'])->name('reports.update');
+        Route::delete('reports/{report}', [AdminReportController::class, 'destroy'])->name('reports.destroy');
 
-        Route::get('reports/create', [AdminReportController::class, 'create'])
-            ->middleware('permission:reports.create')
-            ->name('reports.create');
-
-        Route::post('reports', [AdminReportController::class, 'store'])
-            ->middleware('permission:reports.create')
-            ->name('reports.store');
-
-        Route::get('reports/{report}/edit', [AdminReportController::class, 'edit'])
-            ->middleware('permission:reports.edit')
-            ->name('reports.edit');
-
-        Route::put('reports/{report}', [AdminReportController::class, 'update'])
-            ->middleware('permission:reports.edit')
-            ->name('reports.update');
-
-        Route::delete('reports/{report}', [AdminReportController::class, 'destroy'])
-            ->middleware('permission:reports.delete')
-            ->name('reports.destroy');
-
-
+        /*
+        |----------------------------------------------------------------------
+        | Finance Reports
+        |----------------------------------------------------------------------
+        */
         Route::prefix('finance-reports')
-            ->middleware('permission:finance_reports.view')
             ->name('finance_reports.')
             ->group(function () {
                 Route::get('/', [FinanceReportController::class, 'index'])->name('index');
@@ -172,34 +111,26 @@ Route::prefix('admin')
                 Route::get('/status', [FinanceReportController::class, 'status'])->name('status');
                 Route::get('/payment-method', [FinanceReportController::class, 'paymentMethod'])->name('paymentMethod');
             });
+
         /*
-        |--------------------------------------------------------------------------
+        |----------------------------------------------------------------------
         | Settings
-        |--------------------------------------------------------------------------
+        |----------------------------------------------------------------------
         */
-        Route::get('settings', [SettingsController::class, 'edit'])
-            ->middleware('permission:settings.manage')
-            ->name('settings.edit');
-
-        Route::post('settings', [SettingsController::class, 'update'])
-            ->middleware('permission:settings.manage')
-            ->name('settings.update');
+        Route::get('settings', [SettingsController::class, 'edit'])->name('settings.edit');
+        Route::post('settings', [SettingsController::class, 'update'])->name('settings.update');
 
         /*
-        |--------------------------------------------------------------------------
+        |----------------------------------------------------------------------
         | Users
-        |--------------------------------------------------------------------------
+        |----------------------------------------------------------------------
         */
-        Route::resource('users', UserController::class)
-            ->except(['show'])
-            ->middleware('permission:users.manage');
+        Route::resource('users', UserController::class)->except(['show']);
 
         /*
-        |--------------------------------------------------------------------------
+        |----------------------------------------------------------------------
         | Roles
-        |--------------------------------------------------------------------------
+        |----------------------------------------------------------------------
         */
-        Route::resource('roles', RoleController::class)
-            ->except(['show'])
-            ->middleware('permission:roles.manage');
+        Route::resource('roles', RoleController::class)->except(['show']);
     });

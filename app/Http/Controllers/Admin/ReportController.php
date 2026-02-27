@@ -6,10 +6,19 @@ use App\Http\Controllers\Controller;
 use App\Models\Campaign;
 use App\Models\Report;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class ReportController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:reports.view')->only(['index']);
+        $this->middleware('permission:reports.create')->only(['create', 'store']);
+        $this->middleware('permission:reports.edit')->only(['edit', 'update']);
+        $this->middleware('permission:reports.delete')->only(['destroy']);
+    }
+
     public function index()
     {
         $reports = Report::with('campaign')
@@ -21,7 +30,8 @@ class ReportController extends Controller
 
     public function create()
     {
-        $campaigns = Campaign::orderByDesc('is_featured')
+        $campaigns = Campaign::query()
+            ->orderByDesc('is_featured')
             ->orderByDesc('priority')
             ->latest()
             ->get(['id', 'title_ar', 'title_en']);
@@ -31,23 +41,29 @@ class ReportController extends Controller
 
     public function store(Request $request)
     {
-        $data = $this->validateData($request);
+        $data = $this->validateData($request, update: false);
 
         $data['created_by'] = auth()->id();
 
-        // PDF required on create
-        $data['pdf_path'] = $request->file('pdf')
-            ->store('reports', 'public');
+        // checkbox normalize (مهم جدًا)
+        $data['is_public'] = $request->boolean('is_public');
 
-        Report::create($data);
+        DB::transaction(function () use ($request, &$data) {
+            // PDF required on create
+            $data['pdf_path'] = $request->file('pdf')->store('reports', 'public');
 
-        return redirect()->route('admin.reports.index')
+            Report::create($data);
+        });
+
+        return redirect()
+            ->route('admin.reports.index')
             ->with('success', 'تم إضافة التقرير بنجاح');
     }
 
     public function edit(Report $report)
     {
-        $campaigns = Campaign::orderByDesc('is_featured')
+        $campaigns = Campaign::query()
+            ->orderByDesc('is_featured')
             ->orderByDesc('priority')
             ->latest()
             ->get(['id', 'title_ar', 'title_en']);
@@ -59,30 +75,45 @@ class ReportController extends Controller
     {
         $data = $this->validateData($request, update: true);
 
-        // checkbox normalize
         $data['is_public'] = $request->boolean('is_public');
 
-        if ($request->hasFile('pdf')) {
-            // delete old
-            if ($report->pdf_path) {
-                Storage::disk('public')->delete($report->pdf_path);
+        DB::transaction(function () use ($request, $report, &$data) {
+            if ($request->hasFile('pdf')) {
+                // خزّن الجديد أولًا
+                $newPath = $request->file('pdf')->store('reports', 'public');
+                $oldPath = $report->pdf_path;
+
+                $data['pdf_path'] = $newPath;
+
+                $report->update($data);
+
+                // احذف القديم بعد نجاح التحديث
+                if ($oldPath) {
+                    Storage::disk('public')->delete($oldPath);
+                }
+
+                return;
             }
-            $data['pdf_path'] = $request->file('pdf')->store('reports', 'public');
-        }
 
-        $report->update($data);
+            $report->update($data);
+        });
 
-        return redirect()->route('admin.reports.index')
+        return redirect()
+            ->route('admin.reports.index')
             ->with('success', 'تم تحديث التقرير بنجاح');
     }
 
     public function destroy(Report $report)
     {
-        if ($report->pdf_path) {
-            Storage::disk('public')->delete($report->pdf_path);
-        }
+        DB::transaction(function () use ($report) {
+            $path = $report->pdf_path;
 
-        $report->delete();
+            $report->delete();
+
+            if ($path) {
+                Storage::disk('public')->delete($path);
+            }
+        });
 
         return back()->with('success', 'تم حذف التقرير');
     }
@@ -90,22 +121,22 @@ class ReportController extends Controller
     private function validateData(Request $request, bool $update = false): array
     {
         return $request->validate([
-            'title_ar' => 'required|string|max:255',
-            'title_en' => 'nullable|string|max:255',
+            'title_ar' => ['required', 'string', 'max:255'],
+            'title_en' => ['nullable', 'string', 'max:255'],
 
-            'summary_ar' => 'nullable|string',
-            'summary_en' => 'nullable|string',
+            'summary_ar' => ['nullable', 'string'],
+            'summary_en' => ['nullable', 'string'],
 
-            'period_month' => 'nullable|string|max:2',
-            'period_year'  => 'nullable|string|max:4',
+            'period_month' => ['nullable', 'string', 'max:2'],
+            'period_year'  => ['nullable', 'string', 'max:4'],
 
-            'campaign_id' => 'nullable|exists:campaigns,id',
+            'campaign_id' => ['nullable', 'exists:campaigns,id'],
 
-            'is_public' => 'nullable|boolean',
+            'is_public' => ['nullable', 'boolean'],
 
             'pdf' => $update
-                ? 'nullable|mimes:pdf|max:10240'   // 10MB
-                : 'required|mimes:pdf|max:10240',
+                ? ['nullable', 'mimes:pdf', 'max:10240']   // 10MB
+                : ['required', 'mimes:pdf', 'max:10240'],
         ]);
     }
 }

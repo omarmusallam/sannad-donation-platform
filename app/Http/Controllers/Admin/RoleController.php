@@ -4,14 +4,24 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class RoleController extends Controller
 {
+    private string $guard = 'web';
+
+    public function __construct()
+    {
+        $this->middleware('permission:roles.manage');
+    }
+
     public function index()
     {
         $roles = Role::query()
+            ->where('guard_name', $this->guard)
             ->withCount('users')
             ->with('permissions')
             ->orderBy('name')
@@ -22,7 +32,11 @@ class RoleController extends Controller
 
     public function create()
     {
-        $permissions = Permission::query()->orderBy('name')->get();
+        $permissions = Permission::query()
+            ->where('guard_name', $this->guard)
+            ->orderBy('name')
+            ->get();
+
         $groups = $this->groupPermissions($permissions);
 
         return view('admin.roles.create', compact('permissions', 'groups'));
@@ -31,27 +45,44 @@ class RoleController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:50', 'unique:roles,name'],
-            'permissions' => ['array'],
-            'permissions.*' => ['string', 'exists:permissions,name'],
+            'name' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('roles', 'name'),
+                // منع أسماء محجوزة لو تحب (اختياري لكنه مفيد)
+                Rule::notIn(['super_admin']),
+            ],
+            'permissions' => ['nullable', 'array'],
+            'permissions.*' => [
+                'string',
+                Rule::exists('permissions', 'name')->where('guard_name', $this->guard),
+            ],
         ]);
 
-        $role = Role::create(['name' => $data['name']]);
-        $role->syncPermissions($data['permissions'] ?? []);
+        DB::transaction(function () use ($data) {
+            $role = Role::create([
+                'name' => $data['name'],
+                'guard_name' => $this->guard,
+            ]);
+
+            $role->syncPermissions($data['permissions'] ?? []);
+        });
 
         return redirect()
             ->route('admin.roles.index')
-            ->with('success', 'Role created successfully.');
+            ->with('success', 'تم إنشاء الدور بنجاح.');
     }
 
     public function edit(Role $role)
     {
-        // حماية super_admin من التعديل (اختياري لكن أنا أنصح)
-        if ($role->name === 'super_admin') {
-            abort(403);
-        }
+        $this->denyIfSuperAdmin($role);
 
-        $permissions = Permission::query()->orderBy('name')->get();
+        $permissions = Permission::query()
+            ->where('guard_name', $this->guard)
+            ->orderBy('name')
+            ->get();
+
         $groups = $this->groupPermissions($permissions);
 
         $selected = $role->permissions->pluck('name')->toArray();
@@ -61,45 +92,69 @@ class RoleController extends Controller
 
     public function update(Request $request, Role $role)
     {
-        if ($role->name === 'super_admin') {
-            abort(403);
-        }
+        $this->denyIfSuperAdmin($role);
 
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:50', 'unique:roles,name,' . $role->id],
-            'permissions' => ['array'],
-            'permissions.*' => ['string', 'exists:permissions,name'],
+            'name' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('roles', 'name')->ignore($role->id),
+                Rule::notIn(['super_admin']),
+            ],
+            'permissions' => ['nullable', 'array'],
+            'permissions.*' => [
+                'string',
+                Rule::exists('permissions', 'name')->where('guard_name', $this->guard),
+            ],
         ]);
 
-        $role->update(['name' => $data['name']]);
-        $role->syncPermissions($data['permissions'] ?? []);
+        DB::transaction(function () use ($role, $data) {
+            $role->update([
+                'name' => $data['name'],
+                'guard_name' => $this->guard,
+            ]);
+
+            $role->syncPermissions($data['permissions'] ?? []);
+        });
 
         return redirect()
             ->route('admin.roles.index')
-            ->with('success', 'Role updated successfully.');
+            ->with('success', 'تم تحديث الدور بنجاح.');
     }
 
     public function destroy(Role $role)
     {
+        $this->denyIfSuperAdmin($role);
+
+        if ($role->users()->count() > 0) {
+            return back()->with('error', 'لا يمكن حذف دور مرتبط بمستخدمين.');
+        }
+
+        DB::transaction(function () use ($role) {
+            $role->syncPermissions([]);
+            $role->delete();
+        });
+
+        return redirect()
+            ->route('admin.roles.index')
+            ->with('success', 'تم حذف الدور بنجاح.');
+    }
+
+    private function denyIfSuperAdmin(Role $role): void
+    {
         if ($role->name === 'super_admin') {
             abort(403);
         }
 
-        // منع حذف دور عليه مستخدمين
-        if ($role->users()->count() > 0) {
-            return back()->with('error', 'Cannot delete role with assigned users.');
+        // حماية إضافية: لا تسمح بالتعامل مع Roles من Guard مختلف
+        if ($role->guard_name !== $this->guard) {
+            abort(404);
         }
-
-        $role->delete();
-
-        return redirect()
-            ->route('admin.roles.index')
-            ->with('success', 'Role deleted successfully.');
     }
 
     private function groupPermissions($permissions)
     {
-        // group by prefix (dashboard, campaigns, donations...)
         return $permissions->groupBy(function ($p) {
             return explode('.', $p->name)[0] ?? 'other';
         });

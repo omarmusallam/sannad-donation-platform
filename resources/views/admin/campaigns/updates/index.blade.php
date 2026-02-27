@@ -4,13 +4,15 @@
 @section('page_title', 'تحديثات: ' . $campaign->title_ar)
 
 @section('page_actions')
-    <a href="{{ route('admin.campaigns.updates.create', $campaign) }}"
-        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-black text-white text-sm font-semibold hover:opacity-95 transition shadow-sm">
-        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-        </svg>
-        إضافة تحديث
-    </a>
+    @can('campaign_updates.create')
+        <a href="{{ route('admin.campaigns.updates.create', $campaign) }}"
+            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition shadow-sm">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+            إضافة تحديث
+        </a>
+    @endcan
 @endsection
 
 @section('content')
@@ -33,10 +35,17 @@
                 </div>
             </div>
 
-            <a href="{{ route('admin.campaigns.edit', $campaign) }}"
-                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 transition">
-                ← العودة لتعديل الحملة
-            </a>
+            @can('campaigns.edit')
+                <a href="{{ route('admin.campaigns.edit', $campaign) }}"
+                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 transition">
+                    ← العودة لتعديل الحملة
+                </a>
+            @else
+                <a href="{{ route('admin.campaigns.index') }}"
+                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 transition">
+                    ← العودة للحملات
+                </a>
+            @endcan
         </div>
 
         <div class="overflow-x-auto">
@@ -70,7 +79,7 @@
 
                             <td class="p-4 md:p-5 text-slate-600">
                                 @php
-                                    $dt = optional($u->published_at) ?? $u->created_at;
+                                    $dt = $u->published_at ?? $u->created_at;
                                 @endphp
                                 <div class="font-medium text-slate-900">{{ $dt->format('Y-m-d') }}</div>
                                 <div class="text-xs text-slate-500 mt-1">{{ $dt->format('H:i') }}</div>
@@ -78,21 +87,33 @@
 
                             <td class="p-4 md:p-5">
                                 <div class="flex flex-wrap items-center gap-2">
-                                    <a href="{{ route('admin.campaigns.updates.edit', [$campaign, $u]) }}"
-                                        class="inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 transition">
-                                        تعديل
-                                    </a>
 
-                                    <form method="POST"
-                                        action="{{ route('admin.campaigns.updates.destroy', [$campaign, $u]) }}"
-                                        onsubmit="return confirm('هل أنت متأكد من حذف التحديث؟');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button
-                                            class="inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl border border-rose-200 bg-rose-50 text-rose-700 text-sm font-semibold hover:bg-rose-100 transition">
-                                            حذف
-                                        </button>
-                                    </form>
+                                    @can('campaign_updates.edit')
+                                        <a href="{{ route('admin.campaigns.updates.edit', [$campaign, $u]) }}"
+                                            class="inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 transition">
+                                            تعديل
+                                        </a>
+                                    @endcan
+
+                                    @can('campaign_updates.delete')
+                                        <form method="POST"
+                                            action="{{ route('admin.campaigns.updates.destroy', [$campaign, $u]) }}"
+                                            onsubmit="return confirm('هل أنت متأكد من حذف التحديث؟');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button
+                                                class="inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl border border-rose-200 bg-rose-50 text-rose-700 text-sm font-semibold hover:bg-rose-100 transition">
+                                                حذف
+                                            </button>
+                                        </form>
+                                    @endcan
+
+                                    @cannot('campaign_updates.edit')
+                                        @cannot('campaign_updates.delete')
+                                            <span class="text-xs text-slate-500">لا توجد صلاحيات لإجراءات</span>
+                                        @endcannot
+                                    @endcannot
+
                                 </div>
                             </td>
                         </tr>
@@ -103,12 +124,15 @@
                                     class="rounded-3xl border border-dashed border-slate-200 bg-slate-50/60 p-8 text-center">
                                     <div class="text-slate-900 font-semibold">لا توجد تحديثات بعد</div>
                                     <div class="text-sm text-slate-500 mt-1">ابدأ بإضافة تحديث جديد للحملة.</div>
-                                    <div class="mt-5">
-                                        <a href="{{ route('admin.campaigns.updates.create', $campaign) }}"
-                                            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-black text-white text-sm font-semibold hover:opacity-95 transition">
-                                            إضافة تحديث
-                                        </a>
-                                    </div>
+
+                                    @can('campaign_updates.create')
+                                        <div class="mt-5">
+                                            <a href="{{ route('admin.campaigns.updates.create', $campaign) }}"
+                                                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition">
+                                                إضافة تحديث
+                                            </a>
+                                        </div>
+                                    @endcan
                                 </div>
                             </td>
                         </tr>

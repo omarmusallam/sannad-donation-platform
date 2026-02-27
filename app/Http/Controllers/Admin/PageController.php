@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Page;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class PageController extends Controller
@@ -22,7 +23,7 @@ class PageController extends Controller
     {
         $pages = Page::query()
             ->orderBy('sort_order')
-            ->orderBy('id', 'desc')
+            ->orderByDesc('id')
             ->paginate(20);
 
         return view('admin.pages.index', compact('pages'));
@@ -37,12 +38,19 @@ class PageController extends Controller
     {
         $data = $this->validated($request);
 
-        // حماية من إدخال scripts (اختياري الآن، مهم لاحقاً)
+        // checkbox: لو ما انبعثت لازم تتحول false
+        $data['is_public'] = $request->boolean('is_public');
+
+        // حماية بسيطة من إدخال سكربتات (حل خفيف)
         $data = $this->sanitizeContent($data);
 
-        Page::create($data);
+        DB::transaction(function () use ($data) {
+            Page::create($data);
+        });
 
-        return redirect()->route('admin.pages.index')->with('success', 'تم إنشاء الصفحة بنجاح');
+        return redirect()
+            ->route('admin.pages.index')
+            ->with('success', 'تم إنشاء الصفحة بنجاح');
     }
 
     public function edit(Page $page)
@@ -53,16 +61,25 @@ class PageController extends Controller
     public function update(Request $request, Page $page)
     {
         $data = $this->validated($request, $page->id);
+
+        $data['is_public'] = $request->boolean('is_public');
+
         $data = $this->sanitizeContent($data);
 
-        $page->update($data);
+        DB::transaction(function () use ($page, $data) {
+            $page->update($data);
+        });
 
-        return redirect()->route('admin.pages.index')->with('success', 'تم تحديث الصفحة بنجاح');
+        return redirect()
+            ->route('admin.pages.index')
+            ->with('success', 'تم تحديث الصفحة بنجاح');
     }
 
     public function destroy(Page $page)
     {
-        $page->delete();
+        DB::transaction(function () use ($page) {
+            $page->delete();
+        });
 
         return back()->with('success', 'تم حذف الصفحة');
     }
@@ -97,12 +114,26 @@ class PageController extends Controller
 
     private function sanitizeContent(array $data): array
     {
-        // حل بسيط الآن: نمنع script tags على الأقل
         foreach (['content_ar', 'content_en'] as $key) {
-            if (!empty($data[$key])) {
-                $data[$key] = preg_replace('/<script\b[^>]*>(.*?)<\/script>/is', '', $data[$key]);
+            if (empty($data[$key])) {
+                continue;
             }
+
+            $html = $data[$key];
+
+            // 1) remove script tags
+            $html = preg_replace('/<script\b[^>]*>(.*?)<\/script>/is', '', $html);
+
+            // 2) remove inline event handlers like onclick="..."
+            $html = preg_replace('/\son\w+\s*=\s*"[^"]*"/i', '', $html);
+            $html = preg_replace("/\son\w+\s*=\s*'[^']*'/i", '', $html);
+
+            // 3) block javascript: in href/src
+            $html = preg_replace('/(href|src)\s*=\s*["\']\s*javascript:[^"\']*["\']/i', '$1="#"', $html);
+
+            $data[$key] = $html;
         }
+
         return $data;
     }
 }

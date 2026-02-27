@@ -1,5 +1,10 @@
 @csrf
 
+@php
+    $isEdit = isset($campaign) && !empty($campaign->id);
+    $canSave = $isEdit ? auth()->user()->can('campaigns.edit') : auth()->user()->can('campaigns.create');
+@endphp
+
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     {{-- Main --}}
     <div class="lg:col-span-2 space-y-6">
@@ -69,8 +74,8 @@
 
             <input type="file" name="cover_image"
                 class="block w-full text-sm text-slate-600
-                       file:mr-3 file:rounded-2xl file:border-0 file:bg-black file:px-4 file:py-2.5 file:text-white file:text-sm file:font-semibold
-                       hover:file:opacity-95 transition">
+                       file:mr-3 file:rounded-2xl file:border-0 file:bg-slate-900 file:px-4 file:py-2.5 file:text-white file:text-sm file:font-semibold
+                       hover:file:bg-slate-800 transition">
 
             @if (isset($campaign) && $campaign->cover_url)
                 <div class="mt-5 flex items-center gap-4">
@@ -169,17 +174,23 @@
         </div>
 
         {{-- Footer actions --}}
-        <div class="flex items-center gap-3">
-            <button type="submit"
-                class="inline-flex justify-center items-center gap-2 w-full px-5 py-3 rounded-2xl bg-black text-white text-sm font-semibold hover:opacity-95 transition shadow-sm">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M19 21H5a2 2 0 01-2-2V7a2 2 0 012-2h11l5 5v9a2 2 0 01-2 2z" stroke="currentColor"
-                        stroke-width="2" />
-                    <path d="M17 21v-8H7v8" stroke="currentColor" stroke-width="2" />
-                    <path d="M7 5v5h8" stroke="currentColor" stroke-width="2" />
-                </svg>
-                حفظ
-            </button>
-        </div>
+        @if ($canSave)
+            <div class="flex items-center gap-3">
+                <button type="submit"
+                    class="inline-flex justify-center items-center gap-2 w-full px-5 py-3 rounded-2xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition shadow-sm">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M19 21H5a2 2 0 01-2-2V7a2 2 0 012-2h11l5 5v9a2 2 0 01-2 2z" stroke="currentColor"
+                            stroke-width="2" />
+                        <path d="M17 21v-8H7v8" stroke="currentColor" stroke-width="2" />
+                        <path d="M7 5v5h8" stroke="currentColor" stroke-width="2" />
+                    </svg>
+                    حفظ
+                </button>
+            </div>
+        @else
+            <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900 text-sm">
+                لا تملك صلاحية حفظ التغييرات.
+            </div>
+        @endif
     </div>
 </div>

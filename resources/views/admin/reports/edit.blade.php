@@ -5,16 +5,11 @@
 
 @section('content')
     <div class="max-w-6xl">
-
         {{-- Header --}}
         <div class="flex items-start justify-between gap-4 mb-6">
             <div>
-                <h1 class="text-2xl md:text-3xl font-bold text-slate-900">
-                    تعديل تقرير
-                </h1>
-                <p class="text-sm text-slate-500 mt-1">
-                    حدّث بيانات التقرير أو استبدل ملف الـ PDF عند الحاجة.
-                </p>
+                <h1 class="text-2xl md:text-3xl font-bold text-slate-900">تعديل تقرير</h1>
+                <p class="text-sm text-slate-500 mt-1">حدّث بيانات التقرير أو استبدل ملف PDF عند الحاجة.</p>
             </div>
 
             <a href="{{ route('admin.reports.index') }}"
@@ -28,18 +23,11 @@
             @method('PUT')
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
                 {{-- Main --}}
                 <div class="lg:col-span-2 space-y-6">
-
                     {{-- Basic info --}}
                     <div class="bg-white border border-slate-200 rounded-[28px] p-6 shadow-sm">
-                        <div class="flex items-center justify-between gap-3 mb-5">
-                            <div>
-                                <div class="text-base font-semibold text-slate-900">البيانات الأساسية</div>
-                                <div class="text-xs text-slate-500 mt-1">العناوين وربط الحملة والفترة.</div>
-                            </div>
-                        </div>
+                        <div class="text-base font-semibold text-slate-900 mb-5">البيانات الأساسية</div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
@@ -67,9 +55,9 @@
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-2">الشهر (01-12)</label>
                                 <input name="period_month" value="{{ old('period_month', $report->period_month) }}"
+                                    placeholder="مثال: 01"
                                     class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm
-                                           focus:ring-2 focus:ring-black/10 focus:border-black/30 focus:outline-none transition"
-                                    placeholder="مثال: 01">
+                                           focus:ring-2 focus:ring-black/10 focus:border-black/30 focus:outline-none transition">
                                 @error('period_month')
                                     <div class="text-rose-600 text-xs mt-2">{{ $message }}</div>
                                 @enderror
@@ -78,9 +66,9 @@
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-2">السنة</label>
                                 <input name="period_year" value="{{ old('period_year', $report->period_year) }}"
+                                    placeholder="مثال: 2026"
                                     class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm
-                                           focus:ring-2 focus:ring-black/10 focus:border-black/30 focus:outline-none transition"
-                                    placeholder="مثال: 2026">
+                                           focus:ring-2 focus:ring-black/10 focus:border-black/30 focus:outline-none transition">
                                 @error('period_year')
                                     <div class="text-rose-600 text-xs mt-2">{{ $message }}</div>
                                 @enderror
@@ -107,12 +95,7 @@
 
                     {{-- Summary --}}
                     <div class="bg-white border border-slate-200 rounded-[28px] p-6 shadow-sm">
-                        <div class="flex items-center justify-between gap-3 mb-5">
-                            <div>
-                                <div class="text-base font-semibold text-slate-900">الملخص</div>
-                                <div class="text-xs text-slate-500 mt-1">اكتب ملخصًا واضحًا للتقرير.</div>
-                            </div>
-                        </div>
+                        <div class="text-base font-semibold text-slate-900 mb-5">الملخص</div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
@@ -140,7 +123,6 @@
 
                 {{-- Sidebar --}}
                 <div class="space-y-6">
-
                     {{-- Visibility --}}
                     <div class="bg-white border border-slate-200 rounded-[28px] p-6 shadow-sm">
                         <div class="text-base font-semibold text-slate-900">إعدادات العرض</div>
@@ -150,7 +132,7 @@
                             class="flex items-center justify-between gap-3 p-4 rounded-2xl border border-slate-200 hover:bg-slate-50 transition cursor-pointer">
                             <div>
                                 <div class="text-sm font-semibold text-slate-800">عام (ظاهر للزوار)</div>
-                                <div class="text-xs text-slate-500 mt-0.5">عند تعطيلها يصبح التقرير داخلي.</div>
+                                <div class="text-xs text-slate-500 mt-0.5">تعطيلها يجعل التقرير داخلي.</div>
                             </div>
                             <input type="checkbox" name="is_public" value="1"
                                 class="w-5 h-5 rounded border-slate-300 text-black focus:ring-black/10"
@@ -171,8 +153,8 @@
                                 </div>
 
                                 @if ($report->pdf_path)
-                                    <a href="{{ asset('storage/' . $report->pdf_path) }}" target="_blank"
-                                        class="inline-flex items-center gap-2 px-3 py-2 rounded-2xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 transition">
+                                    <a href="{{ asset('storage/' . $report->pdf_path) }}" target="_blank" rel="noopener"
+                                        class="inline-flex items-center gap-2 px-3 py-2 rounded-2xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">
                                         فتح
                                     </a>
                                 @endif
@@ -183,17 +165,16 @@
                             <label class="block text-sm font-medium text-slate-700 mb-2">تحديث PDF (اختياري)</label>
                             <input type="file" name="pdf" accept="application/pdf"
                                 class="block w-full text-sm text-slate-600
-                                       file:mr-3 file:rounded-2xl file:border-0 file:bg-black file:px-4 file:py-2.5 file:text-white file:text-sm file:font-semibold
-                                       hover:file:opacity-95 transition">
+                                       file:mr-3 file:rounded-2xl file:border-0 file:bg-slate-900 file:px-4 file:py-2.5 file:text-white file:text-sm file:font-semibold
+                                       hover:file:bg-slate-800 transition">
                             @error('pdf')
                                 <div class="text-rose-600 text-xs mt-2">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
 
-                    {{-- Submit --}}
                     <button type="submit"
-                        class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-black text-white text-sm font-semibold hover:opacity-95 transition shadow-sm">
+                        class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition shadow-sm">
                         تحديث
                     </button>
                 </div>

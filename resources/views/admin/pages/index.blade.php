@@ -108,8 +108,29 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-5 py-12 text-center text-slate-500">
-                                لا توجد صفحات حتى الآن.
+                            <td colspan="5" class="px-5 py-12">
+                                <div
+                                    class="rounded-3xl border border-dashed border-slate-200 bg-slate-50/60 p-8 text-center">
+                                    <div
+                                        class="mx-auto w-12 h-12 rounded-2xl bg-white border border-slate-200 grid place-items-center text-slate-400">
+                                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                            <path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="2"
+                                                stroke-linecap="round" />
+                                            <path d="M21 12a9 9 0 10-18 0 9 9 0 0018 0z" stroke="currentColor"
+                                                stroke-width="2" />
+                                        </svg>
+                                    </div>
+                                    <div class="mt-4 text-slate-900 font-semibold">لا توجد صفحات حتى الآن</div>
+                                    <div class="mt-1 text-sm text-slate-500">ابدأ بإضافة صفحة ثابتة جديدة.</div>
+                                    @can('pages.create')
+                                        <div class="mt-5">
+                                            <a href="{{ route('admin.pages.create') }}"
+                                                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition">
+                                                إضافة صفحة
+                                            </a>
+                                        </div>
+                                    @endcan
+                                </div>
                             </td>
                         </tr>
                     @endforelse
