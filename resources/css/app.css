@@ -1,3 +1,136 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* -----------------------------
+   Global Design System Tokens
+------------------------------*/
+@layer base {
+    :root {
+        /* Light */
+        --bg: 255 255 255;
+        --surface: 255 255 255;
+        --muted: 248 250 252; /* slate-50 */
+        --border: 226 232 240; /* slate-200 */
+        --text: 15 23 42; /* slate-900 */
+        --subtext: 71 85 105; /* slate-600 */
+
+        --brand: 79 70 229; /* indigo-600 */
+        --brand2: 16 185 129; /* emerald-500 */
+
+        --success: 16 185 129;
+        --warning: 245 158 11;
+        --danger: 239 68 68;
+    }
+
+    .dark {
+        /* Dark */
+        --bg: 2 6 23; /* slate-950 */
+        --surface: 15 23 42; /* slate-900 */
+        --muted: 30 41 59; /* slate-800 */
+        --border: 51 65 85; /* slate-700 */
+        --text: 241 245 249; /* slate-100 */
+        --subtext: 148 163 184; /* slate-400 */
+
+        --brand: 99 102 241; /* indigo-500 */
+        --brand2: 34 197 94; /* green-500 */
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        html {
+            scroll-behavior: auto;
+        }
+        * {
+            animation-duration: 0.001ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.001ms !important;
+        }
+    }
+
+    body {
+        background-color: rgb(var(--bg));
+        color: rgb(var(--text));
+    }
+
+    ::selection {
+        background: rgb(var(--text));
+        color: rgb(var(--bg));
+    }
+}
+
+/* -----------------------------
+   Reusable Components (Global)
+------------------------------*/
+@layer components {
+    .container-app {
+        @apply max-w-7xl mx-auto px-4 sm:px-6;
+    }
+
+    .card {
+        @apply rounded-3xl border border-border bg-surface;
+    }
+
+    .card-muted {
+        @apply rounded-3xl border border-border bg-muted;
+    }
+
+    .btn {
+        @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 font-extrabold transition active:scale-[.99] focus:outline-none;
+    }
+
+    .btn-primary {
+        color: white;
+        background: linear-gradient(
+            135deg,
+            rgb(var(--brand)),
+            rgb(var(--brand2))
+        );
+        @apply shadow-sm hover:shadow-soft;
+    }
+
+    .btn-secondary {
+        @apply border border-border bg-surface text-text hover:bg-muted;
+    }
+
+    .btn-ghost {
+        @apply text-subtext hover:bg-muted;
+    }
+
+    .badge {
+        @apply inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-1 text-xs font-bold text-subtext;
+    }
+
+    .input {
+        @apply w-full rounded-2xl border border-border bg-surface px-4 py-3 text-sm text-text placeholder:text-subtext/70 outline-none focus:ring-2;
+        --tw-ring-color: rgba(var(--brand), 0.25);
+    }
+
+    .navlink {
+        @apply px-3 py-2 rounded-xl font-extrabold transition;
+    }
+
+    .navlink-idle {
+        @apply text-subtext hover:bg-muted;
+    }
+
+    .navlink-active {
+        @apply text-brand bg-muted ring-1;
+        --tw-ring-color: rgba(var(--brand), 0.2);
+    }
+}
+
+/* -----------------------------
+   Optional: nicer scrollbar
+------------------------------*/
+@layer utilities {
+    .scrollbar-thin {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(148, 163, 184, 0.6) transparent;
+    }
+    .dark .scrollbar-thin {
+        scrollbar-color: rgba(100, 116, 139, 0.6) transparent;
+    }
+}

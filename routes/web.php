@@ -22,23 +22,13 @@ use App\Http\Controllers\Public\PageController as PublicPageController;
 */
 use App\Http\Controllers\ReceiptController;
 
-/*
-|--------------------------------------------------------------------------
-| Receipt Verify Routes (PUBLIC)
-|--------------------------------------------------------------------------
-*/
-
-Route::get('/verify/receipt/{uuid}', [ReceiptController::class, 'verify'])
-    ->name('receipt.verify');
-
-Route::get('/verify/receipt/{uuid}/download', [ReceiptController::class, 'download'])
-    ->name('receipt.download.public');
 
 /*
 |--------------------------------------------------------------------------
 | PUBLIC ROUTES (AR default + EN prefix)
 |--------------------------------------------------------------------------
 */
+
 $publicRoutes = function () {
 
     Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -56,6 +46,14 @@ $publicRoutes = function () {
     Route::get('/transparency/reports/{report}', [ReportController::class, 'show'])->name('reports.show');
 
     Route::get('/p/{page:slug}', [PublicPageController::class, 'show'])->name('pages.show');
+
+
+    Route::get('/verify/receipt/{receipt:uuid}', [ReceiptController::class, 'verify'])
+        ->name('receipt.verify');
+
+    Route::get('/verify/receipt/{receipt:uuid}/download', [ReceiptController::class, 'download'])
+        ->middleware('signed')
+        ->name('receipt.download.public');
 };
 
 /*

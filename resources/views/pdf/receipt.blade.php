@@ -1,248 +1,243 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 
 <head>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
+    <title>إيصال تبرع رسمي</title>
+
     <style>
-        /* ====== Base ====== */
         body {
             font-family: cairo, sans-serif;
-            direction: rtl;
-            font-size: 12px;
-            color: #0f172a;
-            line-height: 1.5;
+            font-size: 13px;
+            color: #1f2937;
         }
 
         .page {
-            border: 1px solid #e5e7eb;
-            padding: 18px;
-            background: #fff;
+            padding: 40px;
+            border: 1px solid #d1d5db;
         }
 
-        /* ====== Header ====== */
         .header {
-            width: 100%;
-            border-bottom: 1px solid #e5e7eb;
-            padding-bottom: 12px;
-            margin-bottom: 14px;
+            border-bottom: 3px solid #16a34a;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
         }
 
-        .brand {
-            font-size: 18px;
-            font-weight: 800;
-            letter-spacing: .2px;
+        .platform {
+            font-size: 22px;
+            font-weight: bold;
         }
 
-        .subtitle {
-            color: #64748b;
+        .platform-sub {
             font-size: 11px;
-            margin-top: 3px;
+            color: #6b7280;
         }
 
-        .badge {
+        .receipt-title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #111827;
+        }
+
+        .status-badge {
             display: inline-block;
-            padding: 6px 10px;
-            border: 1px solid #c7d2fe;
-            background: #eef2ff;
-            color: #3730a3;
-            border-radius: 999px;
-            font-size: 10px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: .5px;
-        }
-
-        .status-issued {
-            border-color: #bbf7d0;
-            background: #ecfdf5;
+            padding: 5px 10px;
+            background: #dcfce7;
             color: #166534;
+            font-size: 11px;
+            border-radius: 4px;
         }
 
-        .status-void {
-            border-color: #fecaca;
-            background: #fef2f2;
-            color: #991b1b;
+        .section-title {
+            font-weight: bold;
+            font-size: 14px;
+            margin-top: 25px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 5px;
         }
 
-        /* ====== Layout ====== */
-        .grid {
+        table {
             width: 100%;
+            border-collapse: collapse;
         }
 
-        .col {
+        td {
+            padding: 6px 0;
             vertical-align: top;
         }
 
-        .card {
-            border: 1px solid #e5e7eb;
-            padding: 12px;
-            background: #ffffff;
-        }
-
-        .cardTitle {
-            font-size: 11px;
-            font-weight: 800;
-            color: #0f172a;
-            margin-bottom: 8px;
-        }
-
         .label {
-            color: #64748b;
-            font-size: 10px;
-            margin-bottom: 3px;
+            color: #6b7280;
+            font-size: 12px;
         }
 
         .value {
-            font-size: 12px;
-            font-weight: 800;
+            font-weight: bold;
+            font-size: 14px;
         }
 
-        .muted {
-            color: #64748b;
-            font-size: 10px;
-        }
-
-        .ltr {
-            direction: ltr;
-            unicode-bidi: embed;
-        }
-
-        /* ====== Amount ====== */
-        .amountWrap {
-            border: 1px solid #e5e7eb;
-            padding: 14px 12px;
-            background: #f8fafc;
-        }
-
-        .amountLabel {
-            color: #334155;
-            font-size: 10px;
-            font-weight: 800;
+        .amount-box {
+            margin-top: 25px;
+            padding: 20px;
+            border: 2px solid #16a34a;
+            text-align: center;
         }
 
         .amount {
-            margin-top: 6px;
-            font-size: 20px;
-            font-weight: 900;
+            font-size: 28px;
+            font-weight: bold;
+            margin-top: 5px;
         }
 
-        /* ====== Footer ====== */
-        .footer {
-            margin-top: 14px;
-            padding-top: 12px;
-            border-top: 1px solid #e5e7eb;
-            color: #64748b;
-            font-size: 10px;
+        .qr-section {
+            margin-top: 30px;
+            padding: 15px;
+            border: 1px solid #e5e7eb;
+            text-align: center;
+        }
+
+        .qr-section img {
+            width: 110px;
+        }
+
+        .legal {
+            margin-top: 25px;
+            font-size: 11px;
+            color: #6b7280;
             line-height: 1.7;
         }
 
-        /* small separator */
-        .sp {
-            height: 10px;
+        .footer {
+            margin-top: 30px;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 15px;
+            text-align: center;
+            font-size: 10px;
+            color: #9ca3af;
         }
     </style>
 </head>
 
 <body>
-    @php
-        $status = $receipt->status ?? 'issued';
-        $isVoided = $status === 'void';
-        $badgeCls = $isVoided ? 'status-void' : 'status-issued';
-        $badgeTxt = $isVoided ? 'VOID' : 'VERIFIED RECEIPT';
-        $issuedAt = $receipt->issued_at?->format('Y-m-d H:i');
-    @endphp
 
     <div class="page">
 
-        {{-- ===== Header ===== --}}
-        <table class="header" cellpadding="0" cellspacing="0">
+        <div class="header">
+            <table>
+                <tr>
+                    <td align="right">
+                        <div class="platform">
+                            {{ config('app.name') }}
+                        </div>
+                        <div class="platform-sub">
+                            منصة التبرعات الرقمية
+                        </div>
+                    </td>
+
+                    <td align="left">
+                        <div class="label">رقم الإيصال</div>
+                        <div class="value">{{ $receipt->receipt_no }}</div>
+                        <div class="label">
+                            تاريخ الإصدار: {{ $receipt->issued_at?->format('Y-m-d H:i') }}
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="receipt-title">
+            إيصال تبرع رسمي
+            <br>
+            <span class="status-badge">
+                {{ strtoupper($receipt->status) === 'ISSUED' ? 'إيصال صالح' : 'ملغي' }}
+            </span>
+        </div>
+
+        <div class="section-title">
+            بيانات التبرع
+        </div>
+
+        <table>
             <tr>
-                <td class="col" style="width:70%;">
-                    <div class="brand">Gaza Sanad</div>
-                    <div class="subtitle">Donation Receipt • إيصال تبرع رسمي</div>
+                <td width="50%">
+                    <div class="label">اسم الحملة</div>
+                    <div class="value">
+                        {{ $receipt->donation?->campaign?->title_ar ?? '-' }}
+                    </div>
                 </td>
-                <td class="col" style="width:30%; text-align:left;">
-                    <span class="badge {{ $badgeCls }}">{{ $badgeTxt }}</span>
+
+                <td width="50%">
+                    <div class="label">رقم التبرع</div>
+                    <div class="value">{{ $receipt->donation_id }}</div>
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                    <div class="label">اسم المتبرع</div>
+                    <div class="value">
+                        {{ $receipt->donor_name ?? 'متبرع مجهول' }}
+                    </div>
+                </td>
+
+                <td>
+                    <div class="label">البريد الإلكتروني</div>
+                    <div class="value">
+                        {{ $receipt->donor_email ?? '-' }}
+                    </div>
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                    <div class="label">طريقة الدفع</div>
+                    <div class="value">
+                        {{ $receipt->donation?->payment_method ?? '-' }}
+                    </div>
+                </td>
+
+                <td>
+                    <div class="label">حالة العملية</div>
+                    <div class="value">
+                        {{ $receipt->donation?->status ?? '-' }}
+                    </div>
                 </td>
             </tr>
         </table>
 
-        {{-- ===== Body Grid ===== --}}
-        <table class="grid" cellpadding="0" cellspacing="0">
-            <tr>
-                {{-- Left (Details) --}}
-                <td class="col" style="width:62%; padding-left:10px;">
-                    <div class="card">
-                        <div class="cardTitle">بيانات الإيصال</div>
+        <div class="amount-box">
+            <div class="label">إجمالي المبلغ المدفوع</div>
+            <div class="amount">
+                {{ number_format($receipt->amount, 2) }} {{ $receipt->currency }}
+            </div>
+        </div>
 
-                        <div class="label">رقم الإيصال / Receipt No.</div>
-                        <div class="value ltr">{{ $receipt->receipt_no }}</div>
+        <div class="qr-section">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ urlencode($verifyUrl) }}">
+            <div style="font-size:11px;margin-top:5px;">
+                امسح الرمز للتحقق من صحة الإيصال
+            </div>
+            <div style="font-size:10px;margin-top:5px;">
+                رمز التحقق: {{ $receipt->uuid }}
+            </div>
+        </div>
 
-                        <div class="sp"></div>
+        <div class="legal">
+            هذا الإيصال صادر إلكترونيًا من النظام ويعتبر مستندًا رسميًا قابلًا للتحقق عبر بوابة التحقق العامة.
+            أي تعديل على محتوى هذا الإيصال يؤدي إلى إبطاله.
+            رابط التحقق: {{ $verifyUrl }}
+        </div>
 
-                        <div class="label">تاريخ الإصدار / Issued At</div>
-                        <div class="value ltr">{{ $issuedAt ?: '—' }}</div>
-
-                        <div class="sp"></div>
-
-                        <div class="label">اسم المتبرع / Donor Name</div>
-                        <div class="value">{{ $receipt->donor_name ?: '—' }}</div>
-
-                        <div class="sp"></div>
-
-                        <div class="label">البريد الإلكتروني / Email</div>
-                        <div class="value ltr">{{ $receipt->donor_email ?: '—' }}</div>
-                    </div>
-
-                    <div class="sp"></div>
-
-                    <div class="amountWrap">
-                        <div class="amountLabel">المبلغ المدفوع / Amount Paid</div>
-                        <div class="amount ltr">
-                            {{ number_format((float) $receipt->amount, 2) }} {{ $receipt->currency }}
-                        </div>
-                        <div class="muted" style="margin-top:6px;">
-                            الحالة / Status: <span class="ltr">{{ $status }}</span>
-                        </div>
-                    </div>
-                </td>
-
-                {{-- Right (QR) --}}
-                <td class="col" style="width:38%;">
-                    <div class="card" style="text-align:center;">
-                        <div class="cardTitle">التحقق / Verification</div>
-
-                        {{-- QR via mPDF --}}
-                        <barcode code="{{ $verifyUrl }}" type="QR" size="1.25" error="M" />
-
-                        <div class="sp"></div>
-
-                        <div class="muted">Scan QR أو افتح الرابط:</div>
-                        <div class="muted ltr" style="word-break:break-all; margin-top:4px;">
-                            {{ $verifyUrl }}
-                        </div>
-                    </div>
-
-                    <div class="sp"></div>
-
-                    <div class="card">
-                        <div class="cardTitle">ملاحظات</div>
-                        <div class="muted">
-                            هذا الإيصال مولّد إلكترونيًا ولا يحتاج ختم أو توقيع.<br>
-                            This receipt is electronically generated and does not require a signature.
-                        </div>
-                    </div>
-                </td>
-            </tr>
-        </table>
-
-        {{-- ===== Footer ===== --}}
         <div class="footer">
-            للدعم: يرجى إرفاق رقم الإيصال عند التواصل. <span class="ltr">Receipt No.</span><br>
-            © {{ date('Y') }} Gaza Sanad
+            © {{ date('Y') }} {{ config('app.name') }}
+            جميع الحقوق محفوظة — لا يتطلب هذا المستند توقيعًا يدويًا
         </div>
 
     </div>
+
 </body>
 
 </html>

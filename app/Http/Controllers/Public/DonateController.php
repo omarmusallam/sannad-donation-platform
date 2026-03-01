@@ -7,6 +7,9 @@ use App\Models\Campaign;
 use App\Models\Donation;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use App\Models\Receipt;
+use App\Services\ReceiptPdfService;
+use Illuminate\Support\Str;
 
 class DonateController extends Controller
 {
@@ -33,7 +36,7 @@ class DonateController extends Controller
         return view('public.donate', compact('campaign', 'campaigns', 'amount'));
     }
 
-    public function submit(Request $request)
+    public function submit(Request $request, ReceiptPdfService $pdfService)
     {
         $data = $request->validate([
             'campaign_id' => ['required', 'exists:campaigns,id'],
@@ -46,17 +49,15 @@ class DonateController extends Controller
 
         $data['is_anonymous'] = $request->boolean('is_anonymous');
 
-        // ✅ حماية: تأكد أن العملة مطابقة للحملة (حتى لا يرسل Currency غلط)
-        $campaign = Campaign::query()->findOrFail($data['campaign_id']);
-        $data['currency'] = $campaign->currency ?: $data['currency'];
+        $campaign = Campaign::findOrFail($data['campaign_id']);
+        $data['currency'] = $campaign->currency;
 
-        // ✅ لو مجهول: لا نخزن اسم/ايميل (اختياري لكن أنظف)
         if ($data['is_anonymous']) {
             $data['donor_name'] = null;
             $data['donor_email'] = null;
         }
 
-        // Mock paid
+        // 1️⃣ Create donation
         $donation = Donation::create([
             ...$data,
             'payment_method' => 'mock',
@@ -64,13 +65,52 @@ class DonateController extends Controller
             'paid_at' => now(),
         ]);
 
+        // 2️⃣ Create receipt record
+        $receipt = Receipt::create([
+            'uuid' => (string) Str::uuid(),
+            'receipt_no' => 'RC-' . now()->format('Ymd') . '-' . str_pad($donation->id, 6, '0', STR_PAD_LEFT),
+            'donation_id' => $donation->id,
+            'donor_name' => $donation->donor_name,
+            'donor_email' => $donation->donor_email,
+            'amount' => $donation->amount,
+            'currency' => $donation->currency,
+            'status' => 'issued',
+            'issued_at' => now(),
+        ]);
+
+        // 3️⃣ Generate PDF
+        $pdfPath = $pdfService->buildAndStore($receipt);
+        $receipt->update(['pdf_path' => $pdfPath]);
+
         $base = app()->getLocale() === 'en' ? '/en' : '';
+
         return redirect()->to(url($base . '/donate/success?d=' . $donation->id));
     }
+
+    // public function success(Request $request)
+    // {
+    //     $donation = Donation::with('campaign')->findOrFail($request->get('d'));
+    //     return view('public.donate_success', compact('donation'));
+    // }
 
     public function success(Request $request)
     {
         $donation = Donation::with('campaign')->findOrFail($request->get('d'));
-        return view('public.donate_success', compact('donation'));
+
+        // Prefer relation if exists, fallback query
+        $receipt = $donation->receipt
+            ?? \App\Models\Receipt::where('donation_id', $donation->id)->latest()->first();
+
+        $receiptUrl = $receipt ? route('receipt.verify', $receipt) : null;
+
+        $downloadUrl = $receipt
+            ? \URL::temporarySignedRoute(
+                'receipt.download.public',
+                now()->addMinutes(30),
+                ['receipt' => $receipt] // ✅ matches {receipt:uuid}
+            )
+            : null;
+
+        return view('public.donate_success', compact('donation', 'receiptUrl', 'downloadUrl'));
     }
 }

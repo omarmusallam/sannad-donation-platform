@@ -22,7 +22,6 @@
         $selectedCampaignId = old('campaign_id', optional($campaign)->id);
         $selectedCurrency = old('currency', $campaign?->currency ?? 'USD');
 
-        // prefer route if exists, fallback to url
         $formAction =
             function_exists('route') && \Illuminate\Support\Facades\Route::has('donate.submit')
                 ? route('donate.submit')
@@ -33,15 +32,14 @@
                 ? route('campaigns.index')
                 : url($base . '/campaigns');
 
-        $urlHome = url($base ?: '/');
+        $urlHome = $base ? url($base) : url('/');
 
-        // quick amounts
         $quickAmounts = [10, 25, 50, 100, 250];
 
-        // map currencies by campaign id for auto currency switch
+        // currency/name maps for JS
         $curMap = [];
         $nameMap = [];
-        foreach ($campaigns as $c) {
+        foreach ($campaigns ?? collect() as $c) {
             $curMap[$c->id] = $c->currency;
             $nameMap[$c->id] = $isEn ? ($c->title_en ?: $c->title_ar) : ($c->title_ar ?: $c->title_en);
         }
@@ -50,80 +48,94 @@
         $subtitle = $isEn
             ? 'Fast, clear, and secure. This is currently a mock flow until payment gateways are connected.'
             : 'سريع، واضح، وآمن. حاليًا هذه عملية تجريبية حتى يتم ربط بوابات الدفع.';
+
+        $steps = [
+            [
+                't' => $isEn ? 'Choose campaign' : 'اختر الحملة',
+                'd' => $isEn ? 'Select where your donation goes.' : 'حدّد أين يذهب تبرعك.',
+            ],
+            [
+                't' => $isEn ? 'Set amount' : 'حدّد المبلغ',
+                'd' => $isEn ? 'Pick quick amounts or enter any value.' : 'اختر مبلغًا سريعًا أو أدخل قيمة.',
+            ],
+            [
+                't' => $isEn ? 'Confirm' : 'تأكيد',
+                'd' => $isEn ? 'Submit and get an instant confirmation.' : 'أرسل الطلب واحصل على تأكيد فوري.',
+            ],
+        ];
     @endphp
 
     <div class="max-w-6xl mx-auto">
+
         {{-- HERO --}}
-        <section class="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-7 sm:p-10 mb-8">
-            <div class="absolute inset-0 -z-10 bg-gradient-to-br from-slate-50 via-white to-transparent"></div>
-            <div class="absolute -right-16 -top-16 h-64 w-64 rounded-full blur-3xl opacity-40"
-                style="background: radial-gradient(circle, rgba(79,70,229,.22), transparent 60%);"></div>
-            <div class="absolute -left-16 -bottom-16 h-64 w-64 rounded-full blur-3xl opacity-35"
-                style="background: radial-gradient(circle, rgba(16,185,129,.18), transparent 60%);"></div>
+        <section class="relative overflow-hidden rounded-[28px] border border-border bg-surface p-7 sm:p-10 mb-8">
+            <div class="absolute inset-0 -z-10 bg-gradient-to-b from-muted via-bg to-transparent"></div>
+            <div class="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full blur-3xl opacity-25"
+                style="background: radial-gradient(circle, rgba(var(--brand),.20), transparent 60%);"></div>
+            <div class="pointer-events-none absolute -left-16 -bottom-16 h-64 w-64 rounded-full blur-3xl opacity-20"
+                style="background: radial-gradient(circle, rgba(var(--brand2),.18), transparent 60%);"></div>
 
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                 <div class="min-w-0">
-                    <div class="text-sm text-slate-500">
+                    <div class="text-sm text-subtext">
                         <a class="hover:underline underline-offset-4" href="{{ $urlHome }}">
                             {{ $isEn ? 'Home' : 'الرئيسية' }}
                         </a>
                         <span class="mx-2">/</span>
-                        <span class="text-slate-700 font-semibold">{{ $pageTitle }}</span>
+                        <span class="text-text font-semibold">{{ $pageTitle }}</span>
                     </div>
 
-                    <h1 class="mt-3 text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-950">
+                    <h1 class="mt-3 text-3xl sm:text-4xl font-black tracking-tight text-text">
                         {{ $pageTitle }}
                     </h1>
 
-                    <p class="mt-2 text-slate-600 leading-relaxed max-w-2xl">
+                    <p class="mt-2 text-subtext leading-relaxed max-w-2xl">
                         {{ $subtitle }}
                     </p>
 
                     {{-- Trust badges --}}
                     <div class="mt-5 flex flex-wrap gap-2">
-                        <span
-                            class="px-3 py-1 rounded-full text-xs bg-slate-50 border border-slate-200 text-slate-700 font-bold">
-                            {{ $isEn ? 'Secure handling' : 'معالجة آمنة' }}
-                        </span>
-                        <span
-                            class="px-3 py-1 rounded-full text-xs bg-slate-50 border border-slate-200 text-slate-700 font-bold">
-                            {{ $isEn ? 'Transparency' : 'شفافية' }}
-                        </span>
-                        <span
-                            class="px-3 py-1 rounded-full text-xs bg-slate-50 border border-slate-200 text-slate-700 font-bold">
-                            {{ $isEn ? 'Instant confirmation' : 'تأكيد فوري' }}
-                        </span>
+                        <span class="badge">{{ $isEn ? 'Secure handling' : 'معالجة آمنة' }}</span>
+                        <span class="badge">{{ $isEn ? 'Transparency' : 'شفافية' }}</span>
+                        <span class="badge">{{ $isEn ? 'Instant confirmation' : 'تأكيد فوري' }}</span>
                     </div>
                 </div>
 
-                <div class="rounded-2xl border border-slate-200 bg-white/70 p-5 text-sm text-slate-700 max-w-md">
-                    <div class="font-extrabold text-slate-950 mb-1">
-                        {{ $isEn ? 'Tip' : 'معلومة' }}
-                    </div>
-                    <div class="text-slate-600 leading-relaxed">
-                        {{ $isEn
-                            ? 'Donate with confidence — campaigns are backed by reports and updates'
-                            : 'تبرع بثقة — كل حملة مرتبطة بتقارير وتحديثات لتوضيح الأثر.' }}
+                {{-- steps mini --}}
+                <div class="rounded-2xl border border-border bg-surface/70 p-5 text-sm max-w-md">
+                    <div class="font-black text-text mb-3">{{ $isEn ? 'How it works' : 'كيف تعمل' }}</div>
+                    <div class="space-y-3">
+                        @foreach ($steps as $i => $s)
+                            <div class="flex gap-3">
+                                <div
+                                    class="shrink-0 w-7 h-7 rounded-xl grid place-items-center border border-border bg-muted font-black text-text">
+                                    {{ $i + 1 }}
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="font-black text-text">{{ $s['t'] }}</div>
+                                    <div class="text-xs text-subtext mt-0.5">{{ $s['d'] }}</div>
+                                </div>
+                            </div>
+                        @endforeach
                     </div>
                 </div>
             </div>
         </section>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
             {{-- Form --}}
-            <form method="POST" action="{{ $formAction }}"
-                class="lg:col-span-2 bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 space-y-6">
+            <form method="POST" action="{{ $formAction }}" class="lg:col-span-2 card p-6 sm:p-8 space-y-6">
                 @csrf
 
                 {{-- Campaign --}}
                 <div>
-                    <label class="block text-sm font-extrabold mb-2 text-slate-950">
+                    <label class="block text-sm font-black mb-2 text-text">
                         {{ $isEn ? 'Campaign' : 'الحملة' }}
                     </label>
 
-                    <select id="campaign_id" name="campaign_id"
-                        class="w-full border border-slate-200 rounded-2xl p-3 bg-white outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 transition">
-                        @foreach ($campaigns as $c)
+                    <select id="campaign_id" name="campaign_id" class="input">
+                        @foreach ($campaigns ?? collect() as $c)
                             <option value="{{ $c->id }}" @selected($selectedCampaignId == $c->id)>
                                 {{ $isEn ? ($c->title_en ?: $c->title_ar) : ($c->title_ar ?: $c->title_en) }}
                             </option>
@@ -134,7 +146,7 @@
                         <div class="text-red-600 text-xs mt-2">{{ $message }}</div>
                     @enderror
 
-                    <p class="mt-2 text-xs text-slate-500">
+                    <p class="mt-2 text-xs text-subtext">
                         {{ $isEn ? 'Select the campaign you want to support.' : 'اختر الحملة التي تريد دعمها.' }}
                     </p>
                 </div>
@@ -142,15 +154,14 @@
                 {{-- Amount + Currency --}}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-extrabold mb-2 text-slate-950">
+                        <label class="block text-sm font-black mb-2 text-text">
                             {{ $isEn ? 'Amount' : 'المبلغ' }}
                         </label>
 
                         <div class="relative">
                             <input id="amount" name="amount" type="number" min="1" step="0.01"
-                                value="{{ $defaultAmount }}"
-                                class="w-full border border-slate-200 rounded-2xl p-3 pe-20 bg-white outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 transition">
-                            <div class="absolute top-1/2 -translate-y-1/2 {{ $isEn ? 'right-3' : 'left-3' }} text-xs text-slate-500 font-bold"
+                                value="{{ $defaultAmount }}" class="input pe-20">
+                            <div class="absolute top-1/2 -translate-y-1/2 {{ $isEn ? 'right-3' : 'left-3' }} text-xs text-subtext font-black"
                                 id="amount_currency_hint">
                                 {{ $selectedCurrency }}
                             </div>
@@ -163,8 +174,7 @@
                         {{-- Quick amounts --}}
                         <div class="mt-3 flex flex-wrap gap-2">
                             @foreach ($quickAmounts as $quick)
-                                <button type="button"
-                                    class="px-3 py-2 text-sm rounded-2xl border border-slate-200 hover:bg-slate-50 transition font-bold text-slate-800"
+                                <button type="button" class="btn btn-secondary px-3 py-2 text-sm"
                                     onclick="
                                         const a=document.getElementById('amount');
                                         a.value='{{ $quick }}';
@@ -175,18 +185,17 @@
                             @endforeach
                         </div>
 
-                        <p class="text-xs text-slate-500 mt-2">
-                            {{ $isEn ? 'Quick buttons just fill the amount field.' : 'الأزرار السريعة تعبئة فقط.' }}
+                        <p class="text-xs text-subtext mt-2">
+                            {{ $isEn ? 'Quick buttons only fill the amount field.' : 'الأزرار السريعة تعبئة فقط.' }}
                         </p>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-extrabold mb-2 text-slate-950">
+                        <label class="block text-sm font-black mb-2 text-text">
                             {{ $isEn ? 'Currency' : 'العملة' }}
                         </label>
 
-                        <select id="currency" name="currency"
-                            class="w-full border border-slate-200 rounded-2xl p-3 bg-white outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 transition">
+                        <select id="currency" name="currency" class="input">
                             @foreach (['USD', 'EUR', 'ILS'] as $cur)
                                 <option value="{{ $cur }}" @selected($selectedCurrency === $cur)>{{ $cur }}
                                 </option>
@@ -197,11 +206,11 @@
                             <div class="text-red-600 text-xs mt-2">{{ $message }}</div>
                         @enderror
 
-                        <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm">
-                            <div class="font-extrabold text-slate-950 mb-1">
+                        <div class="mt-4 card-muted p-4 text-sm">
+                            <div class="font-black text-text mb-1">
                                 {{ $isEn ? 'Security note' : 'ملاحظة أمنية' }}
                             </div>
-                            <div class="text-slate-600 leading-relaxed">
+                            <div class="text-subtext leading-relaxed">
                                 {{ $isEn
                                     ? 'We do not store card data. Payments will be handled by secure providers.'
                                     : 'لا نخزن بيانات البطاقات. الدفع سيتم عبر مزودين آمنين.' }}
@@ -213,11 +222,10 @@
                 {{-- Donor info --}}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-extrabold mb-2 text-slate-950">
+                        <label class="block text-sm font-black mb-2 text-text">
                             {{ $isEn ? 'Name (optional)' : 'الاسم (اختياري)' }}
                         </label>
-                        <input id="donor_name" name="donor_name" value="{{ old('donor_name') }}"
-                            class="w-full border border-slate-200 rounded-2xl p-3 bg-white outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 transition"
+                        <input id="donor_name" name="donor_name" value="{{ old('donor_name') }}" class="input"
                             autocomplete="name">
                         @error('donor_name')
                             <div class="text-red-600 text-xs mt-2">{{ $message }}</div>
@@ -225,11 +233,10 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-extrabold mb-2 text-slate-950">
+                        <label class="block text-sm font-black mb-2 text-text">
                             {{ $isEn ? 'Email (optional)' : 'البريد (اختياري)' }}
                         </label>
-                        <input id="donor_email" name="donor_email" value="{{ old('donor_email') }}"
-                            class="w-full border border-slate-200 rounded-2xl p-3 bg-white outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 transition"
+                        <input id="donor_email" name="donor_email" value="{{ old('donor_email') }}" class="input"
                             autocomplete="email" inputmode="email">
                         @error('donor_email')
                             <div class="text-red-600 text-xs mt-2">{{ $message }}</div>
@@ -238,32 +245,29 @@
                 </div>
 
                 {{-- Anonymous --}}
-                <div class="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div class="flex items-center justify-between gap-4 rounded-2xl border border-border bg-muted p-4">
                     <label class="flex items-center gap-3 text-sm">
                         <input id="is_anonymous" type="checkbox" name="is_anonymous" value="1"
-                            class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-200"
+                            class="h-5 w-5 rounded border-border text-brand focus:ring-2 focus:ring-[rgba(var(--brand),.25)]"
                             @checked(old('is_anonymous'))>
-                        <span class="font-extrabold text-slate-950">
+                        <span class="font-black text-text">
                             {{ $isEn ? 'Donate anonymously' : 'التبرع كمجهول' }}
                         </span>
                     </label>
 
-                    <div class="text-xs text-slate-500">
+                    <div class="text-xs text-subtext">
                         {{ $isEn ? 'Your name won’t be shown publicly.' : 'لن يظهر اسمك علنًا.' }}
                     </div>
                 </div>
 
                 {{-- Actions --}}
                 <div class="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between pt-2">
-                    <button
-                        class="w-full sm:w-auto px-6 py-3 rounded-2xl font-extrabold text-white shadow-sm hover:shadow transition"
-                        style="background: linear-gradient(135deg, rgb(79,70,229), rgb(16,185,129));">
+                    <button class="w-full sm:w-auto btn btn-primary">
                         {{ $isEn ? 'Confirm donation' : 'تأكيد التبرع' }}
                         <span aria-hidden="true">→</span>
                     </button>
 
-                    <a class="w-full sm:w-auto text-center px-6 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 transition font-bold text-slate-800"
-                        href="{{ $urlCampaigns }}">
+                    <a class="w-full sm:w-auto btn btn-secondary text-center" href="{{ $urlCampaigns }}">
                         {{ $isEn ? 'Back to campaigns' : 'العودة للحملات' }}
                     </a>
                 </div>
@@ -275,44 +279,44 @@
 
             {{-- Summary sidebar --}}
             <aside class="lg:sticky lg:top-24 h-fit">
-                <div class="bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 space-y-4">
-                    <div class="text-sm text-slate-500">
+                <div class="card p-6 sm:p-7 space-y-4">
+                    <div class="text-sm text-subtext font-semibold">
                         {{ $isEn ? 'Donation summary' : 'ملخص التبرع' }}
                     </div>
 
-                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                        <div class="text-xs text-slate-500">{{ $isEn ? 'Platform' : 'المنصة' }}</div>
-                        <div class="font-extrabold text-slate-950 mt-1">{{ $siteName }}</div>
+                    <div class="card-muted p-4">
+                        <div class="text-xs text-subtext">{{ $isEn ? 'Platform' : 'المنصة' }}</div>
+                        <div class="font-black text-text mt-1">{{ $siteName }}</div>
                     </div>
 
-                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                        <div class="text-xs text-slate-500">{{ $isEn ? 'Campaign' : 'الحملة' }}</div>
-                        <div class="font-extrabold text-slate-950 mt-1 line-clamp-2" id="summary_campaign">
+                    <div class="card-muted p-4">
+                        <div class="text-xs text-subtext">{{ $isEn ? 'Campaign' : 'الحملة' }}</div>
+                        <div class="font-black text-text mt-1 line-clamp-2" id="summary_campaign">
                             {{ $selectedCampaignId ? $nameMap[$selectedCampaignId] ?? '' : '' }}
                         </div>
-                        <div class="mt-2 text-xs text-slate-500">
+                        <div class="mt-2 text-xs text-subtext">
                             {{ $isEn ? 'Currency auto-syncs with campaign.' : 'العملة تتزامن تلقائيًا مع الحملة.' }}
                         </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
-                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                            <div class="text-xs text-slate-500">{{ $isEn ? 'Amount' : 'المبلغ' }}</div>
-                            <div class="font-extrabold text-slate-950 mt-1">
+                        <div class="card-muted p-4">
+                            <div class="text-xs text-subtext">{{ $isEn ? 'Amount' : 'المبلغ' }}</div>
+                            <div class="font-black text-text mt-1">
                                 <span id="summary_amount">{{ number_format((float) $defaultAmount, 2) }}</span>
                                 <span id="summary_currency">{{ $selectedCurrency }}</span>
                             </div>
                         </div>
 
-                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                            <div class="text-xs text-slate-500">{{ $isEn ? 'Method' : 'الطريقة' }}</div>
-                            <div class="font-extrabold text-slate-950 mt-1">
+                        <div class="card-muted p-4">
+                            <div class="text-xs text-subtext">{{ $isEn ? 'Method' : 'الطريقة' }}</div>
+                            <div class="font-black text-text mt-1">
                                 {{ $isEn ? 'Mock (temporary)' : 'تجريبي (مؤقت)' }}
                             </div>
                         </div>
                     </div>
 
-                    <div class="text-xs text-slate-500 leading-relaxed">
+                    <div class="text-xs text-subtext leading-relaxed">
                         {{ $isEn
                             ? 'Payments will be processed via trusted providers once integrated.'
                             : 'سيتم تنفيذ الدفع عبر مزودين موثوقين عند الربط.' }}
@@ -339,36 +343,47 @@
 
                 const curMapEl = document.getElementById('campaign_currency_map');
                 const nameMapEl = document.getElementById('campaign_name_map');
-                const curMap = curMapEl ? JSON.parse(curMapEl.textContent || '{}') : {};
-                const nameMap = nameMapEl ? JSON.parse(nameMapEl.textContent || '{}') : {};
+
+                let curMap = {};
+                let nameMap = {};
+
+                try {
+                    curMap = curMapEl ? JSON.parse(curMapEl.textContent || '{}') : {};
+                } catch (e) {}
+                try {
+                    nameMap = nameMapEl ? JSON.parse(nameMapEl.textContent || '{}') : {};
+                } catch (e) {}
+
+                function safeNum(v) {
+                    const x = parseFloat(v || 0);
+                    return Number.isFinite(x) ? x : 0;
+                }
 
                 function syncAmount() {
-                    const v = parseFloat(amount.value || 0);
-                    const val = isFinite(v) ? v : 0;
-                    sumAmount.textContent = val.toFixed(2);
+                    if (!sumAmount) return;
+                    sumAmount.textContent = safeNum(amount?.value).toFixed(2);
                 }
 
                 function syncCurrency() {
-                    sumCurrency.textContent = currency.value;
-                    hint.textContent = currency.value;
+                    if (sumCurrency) sumCurrency.textContent = currency?.value || '';
+                    if (hint) hint.textContent = currency?.value || '';
                 }
 
                 function syncCampaignLabel() {
-                    const cid = campaign.value;
-                    sumCampaign.textContent = nameMap[cid] || '';
+                    if (!sumCampaign) return;
+                    const cid = campaign?.value;
+                    sumCampaign.textContent = (cid && nameMap[cid]) ? nameMap[cid] : '';
                 }
 
-                // auto currency from campaign
                 function syncCurrencyFromCampaign() {
-                    const cid = campaign.value;
-                    if (curMap[cid]) {
+                    const cid = campaign?.value;
+                    if (cid && curMap[cid] && currency) {
                         currency.value = curMap[cid];
                         syncCurrency();
                     }
                     syncCampaignLabel();
                 }
 
-                // anonymous: disable donor inputs (UX only)
                 function syncAnonymous() {
                     const on = !!isAnon?.checked;
                     if (donorName) donorName.disabled = on;

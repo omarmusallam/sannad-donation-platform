@@ -1,113 +1,153 @@
 @extends('layouts.public')
 
-@section('title', app()->getLocale() === 'en' ? 'Donation successful' : 'نجاح التبرع')
+@section('title', app()->getLocale() === 'en' ? 'Donation Completed' : 'تم إتمام التبرع')
 
 @section('content')
     @php
         $isEn = app()->getLocale() === 'en';
-        $base = $isEn ? '/en' : '';
         $money = fn($v) => number_format((float) $v, 2);
 
-        // safer urls
-        $urlCampaign = url($base . '/campaigns/' . $donation->campaign->slug);
-        $urlCampaigns = url($base . '/campaigns');
-
-        $copyLabel = $isEn ? 'Copy receipt link' : 'نسخ رابط الإيصال';
-        $copiedLabel = $isEn ? 'Copied!' : 'تم النسخ!';
+        $receiptNo = $donation->receipt->receipt_no ?? null;
     @endphp
 
-    <div class="max-w-3xl mx-auto">
-        <div class="bg-white border border-slate-200 rounded-3xl p-7 sm:p-10 relative overflow-hidden">
-            <div class="absolute -right-16 -top-16 h-64 w-64 rounded-full blur-3xl opacity-40"
-                style="background: radial-gradient(circle, rgba(79,70,229,.18), transparent 60%);"></div>
-            <div class="absolute -left-16 -bottom-16 h-64 w-64 rounded-full blur-3xl opacity-35"
-                style="background: radial-gradient(circle, rgba(16,185,129,.14), transparent 60%);"></div>
+    <div class="max-w-4xl mx-auto">
 
-            <div class="relative flex items-start justify-between gap-4">
+        {{-- Success Header --}}
+        <div class="card p-10 text-center relative overflow-hidden">
+
+            <div class="absolute inset-0 -z-10 bg-gradient-to-br from-success/10 via-transparent to-transparent"></div>
+
+            <div class="text-5xl font-black text-success mb-4">✔</div>
+
+            <h1 class="text-3xl sm:text-4xl font-black text-text">
+                {{ $isEn ? 'Thank You for Your Donation' : 'شكراً لتبرعك' }}
+            </h1>
+
+            <p class="text-subtext mt-3 max-w-xl mx-auto leading-relaxed">
+                {{ $isEn
+                    ? 'An official receipt has been issued and can be verified securely using the link below.'
+                    : 'تم إصدار إيصال رسمي ويمكن التحقق منه بأمان عبر الرابط أدناه.' }}
+            </p>
+
+        </div>
+
+        {{-- Receipt Card --}}
+        <div class="mt-8 card p-8">
+
+            <div class="grid md:grid-cols-2 gap-8 items-start">
+
                 <div>
-                    <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-950">
-                        {{ $isEn ? 'Thank you!' : 'شكرًا لك!' }}
-                    </h1>
-                    <p class="mt-2 text-slate-600 leading-relaxed">
-                        {{ $isEn ? 'Your donation has been recorded successfully.' : 'تم تسجيل تبرعك بنجاح.' }}
-                    </p>
+                    <div class="text-sm text-subtext">
+                        {{ $isEn ? 'Receipt Number' : 'رقم الإيصال' }}
+                    </div>
+
+                    <div class="font-mono text-xl font-bold text-text mt-1">
+                        {{ $receiptNo ?? '—' }}
+                    </div>
+
+                    <div class="mt-6 text-sm text-subtext">
+                        {{ $isEn ? 'Amount Paid' : 'المبلغ المدفوع' }}
+                    </div>
+
+                    <div class="text-3xl font-black text-text mt-1">
+                        {{ $money($donation->amount) }}
+                        <span class="text-lg text-subtext">
+                            {{ $donation->currency }}
+                        </span>
+                    </div>
+
+                    <div class="mt-6 text-xs text-subtext">
+                        {{ $isEn ? 'Donation ID:' : 'رقم العملية:' }}
+                        <span class="font-mono">{{ $donation->id }}</span>
+                    </div>
                 </div>
 
-                <div
-                    class="shrink-0 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-extrabold">
-                    {{ $isEn ? 'Success' : 'تم' }}
-                </div>
+                {{-- QR --}}
+                @if (!empty($receiptUrl))
+                    <div class="flex flex-col items-center">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={{ urlencode($receiptUrl) }}"
+                            class="rounded-xl border border-border shadow-sm">
+                        <div class="text-xs text-subtext mt-3 text-center">
+                            {{ $isEn ? 'Scan to verify this receipt' : 'امسح للتحقق من الإيصال' }}
+                        </div>
+                    </div>
+                @endif
+
             </div>
 
-            <div class="relative mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div class="text-xs text-slate-500">{{ $isEn ? 'Campaign' : 'الحملة' }}</div>
-                    <div class="mt-1 font-extrabold text-slate-950">
-                        {{ $donation->campaign->title }}
-                    </div>
-                    <div class="mt-1 text-xs text-slate-500">
-                        Slug: <span class="font-mono">{{ $donation->campaign->slug }}</span>
-                    </div>
-                </div>
+            {{-- Actions --}}
+            @if (!empty($receiptUrl))
+                <div class="mt-8 flex flex-wrap gap-3">
 
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div class="text-xs text-slate-500">{{ $isEn ? 'Amount' : 'المبلغ' }}</div>
-                    <div class="mt-1 font-extrabold text-slate-950 text-lg">
-                        {{ $money($donation->amount) }} {{ $donation->currency }}
-                    </div>
-                    <div class="mt-1 text-xs text-slate-500">
-                        {{ $isEn ? 'Method' : 'الطريقة' }}: {{ $donation->payment_method }}
-                    </div>
-                </div>
+                    <a href="{{ $receiptUrl }}" class="btn btn-primary">
+                        {{ $isEn ? 'Verify Receipt' : 'التحقق من الإيصال' }}
+                    </a>
 
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div class="text-xs text-slate-500">{{ $isEn ? 'Donor' : 'المتبرع' }}</div>
-                    <div class="mt-1 font-extrabold text-slate-950">
-                        {{ $donation->display_donor_name ?? ($donation->is_anonymous ? ($isEn ? 'Anonymous' : 'مجهول') : ($donation->donor_name ?: ($isEn ? 'Donor' : 'متبرع'))) }}
-                    </div>
-                    <div class="mt-1 text-xs text-slate-500">
-                        {{ $isEn ? 'Status' : 'الحالة' }}: {{ $donation->status }}
-                    </div>
-                </div>
-
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div class="text-xs text-slate-500">{{ $isEn ? 'Time' : 'الوقت' }}</div>
-                    <div class="mt-1 font-extrabold text-slate-950">
-                        {{ optional($donation->paid_at)->format('Y-m-d H:i') ?? $donation->created_at->format('Y-m-d H:i') }}
-                    </div>
-                    <div class="mt-1 text-xs text-slate-500">
-                        {{ $isEn ? 'Reference' : 'مرجع' }}: #{{ $donation->id }}
-                    </div>
-                </div>
-            </div>
-
-            <div class="relative mt-8 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-                <a class="px-6 py-3 rounded-2xl font-extrabold text-white text-center shadow-sm hover:shadow transition"
-                    style="background: linear-gradient(135deg, rgb(79,70,229), rgb(16,185,129));"
-                    href="{{ $urlCampaign }}">
-                    {{ $isEn ? 'Back to campaign' : 'العودة للحملة' }}
-                    <span aria-hidden="true">→</span>
-                </a>
-
-                <div class="flex flex-col sm:flex-row gap-3">
-                    <button type="button"
-                        onclick="navigator.clipboard.writeText(window.location.href); this.innerText='{{ $copiedLabel }}';"
-                        class="px-6 py-3 rounded-2xl border border-slate-200 text-center hover:bg-slate-50 transition font-bold">
-                        {{ $copyLabel }}
+                    <button class="btn btn-secondary" onclick="copyText('{{ $receiptUrl }}', this)">
+                        {{ $isEn ? 'Copy Link' : 'نسخ الرابط' }}
                     </button>
 
-                    <a class="px-6 py-3 rounded-2xl border border-slate-200 text-center hover:bg-slate-50 transition font-bold"
-                        href="{{ $urlCampaigns }}">
-                        {{ $isEn ? 'Browse campaigns' : 'استعراض الحملات' }}
-                    </a>
-                </div>
-            </div>
+                    <button class="btn btn-secondary" onclick="shareReceipt()">
+                        {{ $isEn ? 'Share' : 'مشاركة' }}
+                    </button>
 
-            <div class="relative mt-6 text-xs text-slate-500 leading-relaxed">
-                {{ $isEn
-                    ? 'This is a temporary mock flow. Once payment is integrated, you will receive an official receipt and provider reference.'
-                    : 'هذه عملية تجريبية مؤقتًا. بعد ربط الدفع ستصلك إيصالات رسمية ومرجع مزود الدفع.' }}
-            </div>
+                    @if (!empty($downloadUrl))
+                        <a href="{{ $downloadUrl }}" class="btn btn-secondary">
+                            {{ $isEn ? 'Download PDF' : 'تحميل PDF' }}
+                        </a>
+                    @endif
+
+                </div>
+            @endif
+
         </div>
+
+        {{-- Trust Section --}}
+        <div class="mt-8 card-muted p-6 text-sm text-subtext leading-relaxed space-y-2">
+            <div>✔
+                {{ $isEn ? 'All receipts are digitally issued and verifiable.' : 'جميع الإيصالات موثقة رقمياً وقابلة للتحقق.' }}
+            </div>
+            <div>✔ {{ $isEn ? 'Download links are temporarily signed for security.' : 'رابط التحميل مؤقت لأسباب أمنية.' }}
+            </div>
+            <div>✔ {{ $isEn ? 'You may safely share this receipt link.' : 'يمكنك مشاركة رابط الإيصال بأمان.' }}</div>
+        </div>
+
     </div>
+
+    <script>
+        function copyText(text, button) {
+            const copiedText = "{{ $isEn ? 'Copied ✓' : '✔ تم النسخ' }}";
+
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(() => {
+                    button.innerText = copiedText;
+                });
+            } else {
+                const input = document.createElement('textarea');
+                input.value = text;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                document.body.removeChild(input);
+                button.innerText = copiedText;
+            }
+        }
+
+        function shareReceipt() {
+            const url = "{{ $receiptUrl ?? '' }}";
+
+            if (!url) return;
+
+            if (navigator.share) {
+                navigator.share({
+                    title: "{{ $isEn ? 'Donation Receipt' : 'إيصال تبرع' }}",
+                    text: "{{ $isEn ? 'You can verify this official receipt via the link.' : 'يمكنك التحقق من هذا الإيصال الرسمي عبر الرابط.' }}",
+                    url: url
+                });
+            } else {
+                alert("{{ $isEn ? 'Sharing not supported in this browser.' : 'المشاركة غير مدعومة في هذا المتصفح.' }}");
+            }
+        }
+    </script>
+
 @endsection

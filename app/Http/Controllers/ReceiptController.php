@@ -3,33 +3,30 @@
 namespace App\Http\Controllers;
 
 use App\Models\Receipt;
+use Illuminate\Http\Request;
 
 class ReceiptController extends Controller
 {
-    public function verify(string $uuid)
+    public function verify(Receipt $receipt)
     {
-        $receipt = Receipt::query()
-            ->where('uuid', $uuid)
-            ->with('donation.campaign')
-            ->first();
+        // Load relations safely
+        $receipt->loadMissing('donation.campaign');
 
-        if (!$receipt) {
-            return response()
-                ->view('public.receipts.verify_not_found', [], 404);
-        }
+        // If you want to hide cancelled receipts completely, you can 404:
+        // abort_if($receipt->status !== 'issued', 404);
 
         return view('public.receipts.verify', compact('receipt'));
     }
 
-    // ✅ تحميل PDF عبر uuid (عام)
-    public function download(string $uuid)
+    public function download(Request $request, Receipt $receipt)
     {
-        $receipt = Receipt::where('uuid', $uuid)->firstOrFail();
-
         abort_unless($receipt->pdf_path, 404);
 
         $fullPath = storage_path('app/public/' . $receipt->pdf_path);
         abort_unless(file_exists($fullPath), 404);
+
+        // Optional: also require issued status
+        // abort_unless($receipt->status === 'issued', 403);
 
         return response()->download($fullPath, $receipt->receipt_no . '.pdf');
     }
