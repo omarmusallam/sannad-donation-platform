@@ -9,7 +9,7 @@
     @php
         $isAr = app()->isLocale('ar');
 
-        // From View Composer (AppServiceProvider)
+        // Shared settings from AppServiceProvider
         $settings = $appSettings ?? [];
 
         // Brand
@@ -36,13 +36,12 @@
         $faviconUrl = $faviconPath ? asset('storage/' . $faviconPath) : null;
         $logoUrl = $logoPath ? asset('storage/' . $logoPath) : null;
 
-        // Theme color
+        // Theme
         $themeColor = (string) ($settings['site.theme_color'] ?? '#0f172a');
 
-        // Canonical
+        // Canonical / hreflang
         $canonical = url()->current();
 
-        // hreflang alternates
         $path = trim(request()->path(), '/');
         $isEnPath = str_starts_with($path, 'en');
         $cleanPath = $isEnPath ? preg_replace('/^en(\/)?/', '', $path) : $path;
@@ -54,24 +53,10 @@
         if ($arUrl === '') {
             $arUrl = url('/');
         }
+
         $enUrl = rtrim($enUrl, '/');
         if ($enUrl === '') {
             $enUrl = url('/en');
-        }
-
-        // Language switch link
-        // Language switch (robust version – keeps full URI with params)
-        $currentUri = request()->getRequestUri(); // keeps path + query
-        $currentPath = request()->path();
-
-        if (str_starts_with($currentPath, 'en/')) {
-            // remove en prefix
-            $langSwitchUrl = '/' . preg_replace('#^en/#', '', $currentUri);
-        } elseif ($currentPath === 'en') {
-            $langSwitchUrl = '/';
-        } else {
-            // add en prefix
-            $langSwitchUrl = '/en' . $currentUri;
         }
 
         // Contact
@@ -89,15 +74,18 @@
             if (!is_string($url)) {
                 return null;
             }
+
             $url = trim($url);
             if ($url === '') {
                 return null;
             }
 
             $url = ltrim($url, '/');
+
             if (!preg_match('~^https?://~i', $url)) {
                 $url = 'https://' . $url;
             }
+
             return filter_var($url, FILTER_VALIDATE_URL) ? $url : null;
         };
 
@@ -107,16 +95,17 @@
             'instagram' => $normalizeUrl($socialLinks['instagram'] ?? null),
             'youtube' => $normalizeUrl($socialLinks['youtube'] ?? null),
         ];
+
         $hasSocial = !empty(array_filter($social));
 
-        // Main links
-        $urlHome = $isEnPath ? url('/en') : url('/');
-        $urlCampaigns = $isEnPath ? url('/en/campaigns') : route('campaigns.index');
-        $urlTransparency = $isEnPath ? url('/en/transparency') : route('transparency');
-        $urlDonate = $isEnPath ? url('/en/donate') : route('donate');
-        $urlReports = $isEnPath ? url('/en/transparency/reports') : route('reports.index');
+        // Main localized links
+        $urlHome = locale_route('home');
+        $urlCampaigns = locale_route('campaigns.index');
+        $urlTransparency = locale_route('transparency');
+        $urlDonate = locale_route('donate');
+        $urlReports = locale_route('reports.index');
 
-        // Public pages from DB (composer)
+        // Public pages
         $publicPages = $publicPages ?? collect();
 
         $staticLinks = [
@@ -130,23 +119,56 @@
         $pageLinks = [];
         foreach ($publicPages as $p) {
             $title = method_exists($p, 'title') ? $p->title() : ($isAr ? $p->title_ar : $p->title_en ?? $p->title_ar);
-            $pageLinks[] = ['label' => $title, 'url' => route('pages.show', $p->slug)];
+
+            $pageLinks[] = [
+                'label' => $title,
+                'url' => locale_route('pages.show', ['page' => $p->slug]),
+            ];
         }
+
         $footerLinks = array_merge($staticLinks, $pageLinks);
 
+        // Active helpers
         $isActive = function ($pattern) {
             return request()->is($pattern) || request()->is(trim($pattern, '/') . '/*');
         };
 
-        // Align helpers
+        // Alignment helpers
         $edgeStart = $isAr ? 'right' : 'left';
         $edgeEnd = $isAr ? 'left' : 'right';
         $donateMargin = $isAr ? 'mr-2' : 'ml-2';
 
-        // Search (optional)
+        // Search
         $searchQ = (string) request()->query('q', '');
 
-        // Simple icons (no libs)
+        // Donor auth
+        $donor = null;
+        try {
+            $donor = auth('donor')->user();
+        } catch (\Throwable $e) {
+            $donor = null;
+        }
+
+        $donorName = $donor?->name ?? '';
+        $donorInitial = $donorName ? mb_strtoupper(mb_substr($donorName, 0, 1)) : 'U';
+
+        $localizedDonorLoginRoute = app()->isLocale('en') ? 'en.donor.login' : 'donor.login';
+        $localizedDonorRegisterRoute = app()->isLocale('en') ? 'en.donor.register' : 'donor.register';
+        $localizedDonorLogoutRoute = app()->isLocale('en') ? 'en.donor.logout' : 'donor.logout';
+        $localizedDonorDashboardRoute = app()->isLocale('en') ? 'en.donor.dashboard' : 'donor.dashboard';
+
+        $hasDonorLogin = \Illuminate\Support\Facades\Route::has($localizedDonorLoginRoute);
+        $hasDonorRegister = \Illuminate\Support\Facades\Route::has($localizedDonorRegisterRoute);
+        $hasDonorLogout = \Illuminate\Support\Facades\Route::has($localizedDonorLogoutRoute);
+        $hasDonorDashboard = \Illuminate\Support\Facades\Route::has($localizedDonorDashboardRoute);
+
+        $donorDashboardUrl = $hasDonorDashboard
+            ? locale_route('donor.dashboard')
+            : ($isAr
+                ? url('/account')
+                : url('/en/account'));
+
+        // Simple icons
         $icon = function (string $k) {
             return match ($k) {
                 'facebook' => '<span aria-hidden="true" class="font-black">f</span>',
@@ -208,15 +230,19 @@
 
     @stack('head')
 
-    {{-- Theme init early (prevents flash) --}}
+    {{-- Theme init --}}
     <script>
         (function() {
             try {
                 const saved = localStorage.getItem('theme');
                 const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
                 const theme = saved || (prefersDark ? 'dark' : 'light');
-                if (theme === 'dark') document.documentElement.classList.add('dark');
-                else document.documentElement.classList.remove('dark');
+
+                if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
             } catch (e) {}
         })();
     </script>
@@ -230,7 +256,7 @@
         {{ $isAr ? 'تخطي إلى المحتوى' : 'Skip to content' }}
     </a>
 
-    {{-- Background polish --}}
+    {{-- Background --}}
     <div class="pointer-events-none fixed inset-0 -z-10">
         <div class="absolute inset-x-0 -top-28 h-[560px] bg-gradient-to-b from-muted via-bg to-transparent"></div>
 
@@ -250,8 +276,9 @@
             <div class="flex items-center gap-4">
                 <span class="inline-flex items-center gap-2">
                     <span class="h-2 w-2 rounded-full bg-success"></span>
-                    <span
-                        class="font-black">{{ $isAr ? 'شفافية وتقارير دورية' : 'Transparency with periodic reports' }}</span>
+                    <span class="font-black">
+                        {{ $isAr ? 'شفافية وتقارير دورية' : 'Transparency with periodic reports' }}
+                    </span>
                 </span>
 
                 @if ($contactEmail)
@@ -268,14 +295,12 @@
             </div>
 
             <div class="flex items-center gap-2">
-                {{-- Theme toggle --}}
                 <button id="themeToggle"
                     class="px-2.5 py-1 rounded-lg border border-border hover:bg-muted transition font-black"
                     type="button" aria-label="Toggle theme">
                     <span id="themeIcon">{!! $icon('moon') !!}</span>
                 </button>
 
-                {{-- Social --}}
                 @if ($hasSocial)
                     @foreach ($social as $key => $url)
                         @continue(empty($url))
@@ -287,9 +312,8 @@
                     @endforeach
                 @endif
 
-                {{-- Language --}}
                 <a class="px-2.5 py-1 rounded-lg border border-border hover:bg-muted transition font-black"
-                    href="{{ url($langSwitchUrl) }}" rel="nofollow">
+                    href="{{ switch_locale_url() }}" rel="nofollow">
                     {{ $isEnPath ? 'AR' : 'EN' }}
                 </a>
             </div>
@@ -321,7 +345,7 @@
                 </div>
             </a>
 
-            {{-- Desktop nav + Search --}}
+            {{-- Desktop nav --}}
             <div class="hidden lg:flex items-center gap-3">
                 <nav class="flex items-center gap-1 text-sm">
                     @php
@@ -345,12 +369,13 @@
                         {{ $isAr ? 'التقارير' : 'Reports' }}
                     </a>
 
-                    {{-- Pages dropdown --}}
                     @if ($publicPages->count())
                         <details class="relative">
-                            <summary class="navlink navlink-idle list-none cursor-pointer select-none">
+                            <summary
+                                class="navlink navlink-idle list-none cursor-pointer select-none [&::-webkit-details-marker]:hidden">
                                 {{ $isAr ? 'المزيد' : 'More' }}
                             </summary>
+
                             <div
                                 class="absolute {{ $edgeEnd }}-0 mt-2 w-72 bg-surface border border-border rounded-2xl shadow-soft overflow-hidden">
                                 @foreach ($publicPages as $p)
@@ -361,7 +386,8 @@
                                                 ? $p->title_ar
                                                 : $p->title_en ?? $p->title_ar);
                                     @endphp
-                                    <a href="{{ route('pages.show', $p->slug) }}"
+
+                                    <a href="{{ locale_route('pages.show', ['page' => $p->slug]) }}"
                                         class="block px-4 py-3 text-sm hover:bg-muted font-semibold text-subtext">
                                         {{ $t }}
                                     </a>
@@ -371,16 +397,107 @@
                     @endif
                 </nav>
 
-                {{-- Search --}}
                 <form action="{{ $urlCampaigns }}" method="get" class="relative">
                     <span class="absolute {{ $edgeStart }}-3 top-1/2 -translate-y-1/2 text-subtext/70 text-sm">
                         {!! $icon('search') !!}
                     </span>
                     <input name="q" value="{{ $searchQ }}" class="input ps-9 w-[300px]"
-                        placeholder="{{ $isAr ? 'ابحث عن حملة...' : 'Search campaigns...' }}" />
+                        placeholder="{{ $isAr ? 'ابحث عن حملة...' : 'Search campaigns...' }}">
                 </form>
 
-                {{-- Donate CTA --}}
+                @if (!empty($donor))
+                    <details class="relative group">
+                        <summary
+                            class="list-none [&::-webkit-details-marker]:hidden cursor-pointer select-none inline-flex items-center gap-2 px-3 py-2 rounded-2xl border border-border bg-surface hover:bg-muted transition font-black text-sm">
+                            <span
+                                class="w-8 h-8 rounded-xl grid place-items-center border border-border bg-muted text-subtext">
+                                {{ $donorInitial }}
+                            </span>
+                            <span class="max-w-[160px] truncate text-text">{{ $donorName }}</span>
+                            <span class="text-subtext/70 transition group-open:rotate-180">▾</span>
+                        </summary>
+
+                        <div
+                            class="absolute {{ $edgeEnd }}-0 mt-2 w-72 rounded-2xl border border-border bg-surface shadow-soft overflow-hidden">
+                            <div class="px-4 py-3">
+                                <div class="text-xs text-subtext">{{ $isAr ? 'حساب المتبرع' : 'Donor account' }}</div>
+                                <div class="mt-1 font-black text-text truncate">{{ $donorName }}</div>
+                            </div>
+
+                            <div class="h-px bg-border/70"></div>
+
+                            @php
+                                $donorProfileUrl = \Illuminate\Support\Facades\Route::has('donor.profile')
+                                    ? locale_route('donor.profile')
+                                    : null;
+
+                                $donorSecurityUrl = \Illuminate\Support\Facades\Route::has('donor.security')
+                                    ? locale_route('donor.security')
+                                    : null;
+
+                                $donorDonationsUrl = \Illuminate\Support\Facades\Route::has('donor.donations')
+                                    ? locale_route('donor.donations')
+                                    : null;
+                            @endphp
+
+                            <a href="{{ $donorDashboardUrl }}"
+                                class="flex items-center justify-between px-4 py-3 text-sm font-semibold text-subtext hover:text-text hover:bg-muted transition">
+                                <span>{{ $isAr ? 'لوحة الحساب' : 'Account dashboard' }}</span>
+                                <span class="text-subtext/60">→</span>
+                            </a>
+
+                            @if ($donorDonationsUrl)
+                                <a href="{{ $donorDonationsUrl }}"
+                                    class="flex items-center justify-between px-4 py-3 text-sm font-semibold text-subtext hover:text-text hover:bg-muted transition">
+                                    <span>{{ $isAr ? 'تبرعاتي' : 'My donations' }}</span>
+                                    <span class="text-subtext/60">→</span>
+                                </a>
+                            @endif
+
+                            @if ($donorProfileUrl)
+                                <a href="{{ $donorProfileUrl }}"
+                                    class="flex items-center justify-between px-4 py-3 text-sm font-semibold text-subtext hover:text-text hover:bg-muted transition">
+                                    <span>{{ $isAr ? 'إعدادات الحساب' : 'Profile settings' }}</span>
+                                    <span class="text-subtext/60">→</span>
+                                </a>
+                            @endif
+
+                            @if ($donorSecurityUrl)
+                                <a href="{{ $donorSecurityUrl }}"
+                                    class="flex items-center justify-between px-4 py-3 text-sm font-semibold text-subtext hover:text-text hover:bg-muted transition">
+                                    <span>{{ $isAr ? 'الأمان' : 'Security' }}</span>
+                                    <span class="text-subtext/60">→</span>
+                                </a>
+                            @endif
+
+                            <div class="h-px bg-border/70"></div>
+
+                            @if ($hasDonorLogout)
+                                <form method="POST" action="{{ locale_route('donor.logout') }}">
+                                    @csrf
+                                    <button type="submit"
+                                        class="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-subtext hover:text-text hover:bg-muted transition">
+                                        <span>{{ $isAr ? 'تسجيل الخروج' : 'Logout' }}</span>
+                                        <span class="text-subtext/60">⎋</span>
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
+                    </details>
+                @else
+                    @if ($hasDonorLogin)
+                        <a href="{{ locale_route('donor.login') }}" class="btn btn-secondary">
+                            {{ $isAr ? 'تسجيل دخول' : 'Login' }}
+                        </a>
+                    @endif
+
+                    @if ($hasDonorRegister)
+                        <a href="{{ locale_route('donor.register') }}" class="btn btn-secondary">
+                            {{ $isAr ? 'إنشاء حساب' : 'Register' }}
+                        </a>
+                    @endif
+                @endif
+
                 <a href="{{ $urlDonate }}" class="btn btn-primary {{ $donateMargin }}">
                     {{ $isAr ? 'تبرّع الآن' : 'Donate Now' }} <span aria-hidden="true">→</span>
                 </a>
@@ -396,16 +513,78 @@
 
                 <details class="relative">
                     <summary
-                        class="list-none cursor-pointer select-none px-3.5 py-2 rounded-2xl border border-border hover:bg-muted transition font-black"
+                        class="list-none [&::-webkit-details-marker]:hidden cursor-pointer select-none px-3.5 py-2 rounded-2xl border border-border hover:bg-muted transition font-black"
                         aria-label="{{ $isAr ? 'فتح القائمة' : 'Open menu' }}">
                         ☰
                     </summary>
 
                     <div
                         class="absolute {{ $edgeEnd }}-0 mt-2 w-[22rem] bg-surface border border-border rounded-2xl shadow-soft overflow-hidden">
-                        <div class="p-3">
+                        <div class="p-3 space-y-2">
+                            @if (!empty($donor))
+                                <div class="rounded-2xl border border-border bg-surface p-3">
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="w-10 h-10 rounded-2xl grid place-items-center border border-border bg-muted font-black text-subtext">
+                                            {{ $donorInitial }}
+                                        </div>
+                                        <div class="min-w-0">
+                                            <div class="font-black text-text truncate">{{ $donorName }}</div>
+                                            <div class="text-xs text-subtext">
+                                                {{ $isAr ? 'حساب المتبرع' : 'Donor account' }}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-3 grid grid-cols-1 gap-2">
+                                        <a href="{{ $donorDashboardUrl }}" class="btn btn-secondary w-full">
+                                            {{ $isAr ? 'لوحة الحساب' : 'Account dashboard' }}
+                                        </a>
+
+                                        @if ($donorDonationsUrl)
+                                            <a href="{{ $donorDonationsUrl }}" class="btn btn-secondary w-full">
+                                                {{ $isAr ? 'تبرعاتي' : 'My donations' }}
+                                            </a>
+                                        @endif
+
+                                        @if ($donorProfileUrl)
+                                            <a href="{{ $donorProfileUrl }}" class="btn btn-secondary w-full">
+                                                {{ $isAr ? 'إعدادات الحساب' : 'Profile settings' }}
+                                            </a>
+                                        @endif
+
+                                        @if ($donorSecurityUrl)
+                                            <a href="{{ $donorSecurityUrl }}" class="btn btn-secondary w-full">
+                                                {{ $isAr ? 'الأمان' : 'Security' }}
+                                            </a>
+                                        @endif
+
+                                        @if ($hasDonorLogout)
+                                            <form method="POST" action="{{ locale_route('donor.logout') }}">
+                                                @csrf
+                                                <button type="submit" class="btn btn-secondary w-full">
+                                                    {{ $isAr ? 'تسجيل الخروج' : 'Logout' }}
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </div>
+                                </div>
+                            @else
+                                @if ($hasDonorLogin)
+                                    <a href="{{ locale_route('donor.login') }}" class="btn btn-secondary w-full">
+                                        {{ $isAr ? 'تسجيل دخول' : 'Login' }}
+                                    </a>
+                                @endif
+
+                                @if ($hasDonorRegister)
+                                    <a href="{{ locale_route('donor.register') }}" class="btn btn-secondary w-full">
+                                        {{ $isAr ? 'إنشاء حساب' : 'Register' }}
+                                    </a>
+                                @endif
+                            @endif
+
                             <a href="{{ $urlDonate }}" class="btn btn-primary w-full">
-                                {{ $isAr ? 'تبرّع الآن' : 'Donate Now' }} <span aria-hidden="true">→</span>
+                                {{ $isAr ? 'تبرّع الآن' : 'Donate Now' }}
                             </a>
                         </div>
 
@@ -418,7 +597,7 @@
                                     {!! $icon('search') !!}
                                 </span>
                                 <input name="q" value="{{ $searchQ }}" class="input ps-9"
-                                    placeholder="{{ $isAr ? 'ابحث عن حملة...' : 'Search campaigns...' }}" />
+                                    placeholder="{{ $isAr ? 'ابحث عن حملة...' : 'Search campaigns...' }}">
                             </form>
                         </div>
 
@@ -437,8 +616,10 @@
 
                         @if ($publicPages->count())
                             <div class="border-t border-border/60"></div>
-                            <div class="px-4 py-2 text-xs font-black text-subtext/80">{{ $isAr ? 'صفحات' : 'Pages' }}
+                            <div class="px-4 py-2 text-xs font-black text-subtext/80">
+                                {{ $isAr ? 'صفحات' : 'Pages' }}
                             </div>
+
                             @foreach ($publicPages as $p)
                                 @php
                                     $t = method_exists($p, 'title')
@@ -447,7 +628,8 @@
                                             ? $p->title_ar
                                             : $p->title_en ?? $p->title_ar);
                                 @endphp
-                                <a href="{{ route('pages.show', $p->slug) }}"
+
+                                <a href="{{ locale_route('pages.show', ['page' => $p->slug]) }}"
                                     class="block px-4 py-3 text-sm hover:bg-muted">
                                     {{ $t }}
                                 </a>
@@ -457,7 +639,7 @@
                         <div class="border-t border-border/60"></div>
 
                         <div class="p-3 flex items-center justify-between text-sm">
-                            <a href="{{ url($langSwitchUrl) }}"
+                            <a href="{{ switch_locale_url() }}"
                                 class="px-3 py-2 rounded-xl border border-border hover:bg-muted transition font-black"
                                 rel="nofollow">
                                 {{ $isEnPath ? 'AR' : 'EN' }}
@@ -492,7 +674,6 @@
     <footer class="border-t border-border/70 bg-bg">
         <div class="container-app py-12 grid grid-cols-1 md:grid-cols-4 gap-10 text-sm">
 
-            {{-- Brand --}}
             <div class="md:col-span-1">
                 <div class="flex items-center gap-3">
                     @if ($logoUrl)
@@ -505,6 +686,7 @@
                             <span class="font-black text-subtext">{{ mb_substr($siteName, 0, 1) }}</span>
                         </div>
                     @endif
+
                     <div>
                         <div class="font-black text-text text-lg">{{ $siteName }}</div>
                         @if (!empty($tagline))
@@ -524,7 +706,6 @@
                 </div>
             </div>
 
-            {{-- Links --}}
             <div>
                 <div class="font-black text-text mb-3">{{ $isAr ? 'روابط' : 'Links' }}</div>
                 <div class="space-y-2">
@@ -537,18 +718,23 @@
                 </div>
             </div>
 
-            {{-- Contact --}}
             <div>
                 <div class="font-black text-text mb-3">{{ $isAr ? 'تواصل' : 'Contact' }}</div>
                 <div class="space-y-2 text-subtext">
                     @if ($contactEmail)
-                        <div><a class="hover:underline underline-offset-4"
-                                href="mailto:{{ $contactEmail }}">{{ $contactEmail }}</a></div>
+                        <div>
+                            <a class="hover:underline underline-offset-4"
+                                href="mailto:{{ $contactEmail }}">{{ $contactEmail }}</a>
+                        </div>
                     @endif
+
                     @if ($contactPhone)
-                        <div><a class="hover:underline underline-offset-4"
-                                href="tel:{{ $contactPhone }}">{{ $contactPhone }}</a></div>
+                        <div>
+                            <a class="hover:underline underline-offset-4"
+                                href="tel:{{ $contactPhone }}">{{ $contactPhone }}</a>
+                        </div>
                     @endif
+
                     @if ($contactWhats)
                         @php($wa = preg_replace('/\D+/', '', $contactWhats))
                         <div>
@@ -574,7 +760,6 @@
                 @endif
             </div>
 
-            {{-- Newsletter UI --}}
             <div>
                 <div class="font-black text-text mb-3">{{ $isAr ? 'ابقَ على اطلاع' : 'Stay updated' }}</div>
                 <div class="text-subtext text-sm leading-relaxed">
@@ -595,12 +780,14 @@
             </div>
         </div>
 
-        {{-- Bottom bar --}}
         <div class="border-t border-border/70">
             <div
                 class="container-app py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-subtext">
-                <div>© {{ date('Y') }} {{ $siteName }} —
-                    {{ $isAr ? 'جميع الحقوق محفوظة' : 'All rights reserved' }}</div>
+                <div>
+                    © {{ date('Y') }} {{ $siteName }} —
+                    {{ $isAr ? 'جميع الحقوق محفوظة' : 'All rights reserved' }}
+                </div>
+
                 <div class="flex items-center gap-4">
                     <a href="{{ $urlTransparency }}" class="hover:text-text hover:underline underline-offset-4">
                         {{ $isAr ? 'الشفافية' : 'Transparency' }}
@@ -622,6 +809,7 @@
                     —
                     {{ $isAr ? 'نستخدم ملفات تعريف الارتباط لتحسين التجربة وتحليلات الأداء.' : 'We use cookies to improve experience and performance analytics.' }}
                 </div>
+
                 <div class="flex gap-2">
                     <button id="cookieAccept" class="btn btn-primary px-4 py-2.5">
                         {{ $isAr ? 'موافق' : 'Accept' }}
@@ -639,12 +827,18 @@
         (function() {
             function setTheme(theme) {
                 try {
-                    if (theme === 'dark') document.documentElement.classList.add('dark');
-                    else document.documentElement.classList.remove('dark');
+                    if (theme === 'dark') {
+                        document.documentElement.classList.add('dark');
+                    } else {
+                        document.documentElement.classList.remove('dark');
+                    }
+
                     localStorage.setItem('theme', theme);
+
                     const icon = theme === 'dark' ? '☀' : '☾';
                     const el1 = document.getElementById('themeIcon');
                     const el2 = document.getElementById('themeIconMobile');
+
                     if (el1) el1.textContent = icon;
                     if (el2) el2.textContent = icon;
                 } catch (e) {}
@@ -655,22 +849,22 @@
                 setTheme(isDark ? 'light' : 'dark');
             }
 
-            // Init icon
             try {
                 const isDark = document.documentElement.classList.contains('dark');
                 const icon = isDark ? '☀' : '☾';
                 const el1 = document.getElementById('themeIcon');
                 const el2 = document.getElementById('themeIconMobile');
+
                 if (el1) el1.textContent = icon;
                 if (el2) el2.textContent = icon;
             } catch (e) {}
 
             const t1 = document.getElementById('themeToggle');
             const t2 = document.getElementById('themeToggleMobile');
+
             if (t1) t1.addEventListener('click', toggleTheme);
             if (t2) t2.addEventListener('click', toggleTheme);
 
-            // Cookies banner
             try {
                 const key = 'cookie_consent_v1';
                 const banner = document.getElementById('cookieBanner');
@@ -678,17 +872,22 @@
                 const dismiss = document.getElementById('cookieDismiss');
 
                 const has = localStorage.getItem(key);
-                if (!has && banner) banner.classList.remove('hidden');
+                if (!has && banner) {
+                    banner.classList.remove('hidden');
+                }
 
-                if (accept) accept.addEventListener('click', function() {
-                    localStorage.setItem(key, 'accepted');
-                    if (banner) banner.classList.add('hidden');
-                });
+                if (accept) {
+                    accept.addEventListener('click', function() {
+                        localStorage.setItem(key, 'accepted');
+                        if (banner) banner.classList.add('hidden');
+                    });
+                }
 
-                if (dismiss) dismiss.addEventListener('click', function() {
-                    // do not set accepted, just hide for now
-                    if (banner) banner.classList.add('hidden');
-                });
+                if (dismiss) {
+                    dismiss.addEventListener('click', function() {
+                        if (banner) banner.classList.add('hidden');
+                    });
+                }
             } catch (e) {}
         })();
     </script>

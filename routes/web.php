@@ -1,13 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Donor\AccountController;
 
-/*
-|--------------------------------------------------------------------------
-| Public Controllers
-|--------------------------------------------------------------------------
-*/
 use App\Http\Controllers\Public\HomeController;
 use App\Http\Controllers\Public\CampaignController;
 use App\Http\Controllers\Public\DonateController;
@@ -15,22 +10,28 @@ use App\Http\Controllers\Public\TransparencyController;
 use App\Http\Controllers\Public\ReportController;
 use App\Http\Controllers\Public\PageController as PublicPageController;
 
-/*
-|--------------------------------------------------------------------------
-| Receipt Verify (PUBLIC)
-|--------------------------------------------------------------------------
-*/
 use App\Http\Controllers\ReceiptController;
 
+use App\Http\Controllers\Donor\Auth\AuthenticatedSessionController as DonorAuthenticatedSessionController;
+use App\Http\Controllers\Donor\Auth\RegisteredUserController;
+use App\Http\Controllers\Donor\Auth\SocialAuthController;
 
 /*
 |--------------------------------------------------------------------------
-| PUBLIC ROUTES (AR default + EN prefix)
+| User-Facing Routes (Public + Donor)
 |--------------------------------------------------------------------------
+|
+| Arabic: default without prefix
+| English: /en prefix + en. route names
+|
 */
 
-$publicRoutes = function () {
-
+$userFacingRoutes = function () {
+    /*
+    |--------------------------------------------------------------------------
+    | Public Routes
+    |--------------------------------------------------------------------------
+    */
     Route::get('/', [HomeController::class, 'index'])->name('home');
 
     Route::get('/campaigns', [CampaignController::class, 'index'])->name('campaigns.index');
@@ -47,13 +48,51 @@ $publicRoutes = function () {
 
     Route::get('/p/{page:slug}', [PublicPageController::class, 'show'])->name('pages.show');
 
-
     Route::get('/verify/receipt/{receipt:uuid}', [ReceiptController::class, 'verify'])
         ->name('receipt.verify');
 
     Route::get('/verify/receipt/{receipt:uuid}/download', [ReceiptController::class, 'download'])
         ->middleware('signed')
         ->name('receipt.download.public');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Donor Auth Routes
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('guest:donor')->group(function () {
+        Route::get('/login', [DonorAuthenticatedSessionController::class, 'create'])->name('donor.login');
+        Route::post('/login', [DonorAuthenticatedSessionController::class, 'store'])->name('donor.login.store');
+
+        Route::get('/register', [RegisteredUserController::class, 'create'])->name('donor.register');
+        Route::post('/register', [RegisteredUserController::class, 'store'])->name('donor.register.store');
+
+        Route::get('/auth/{provider}/redirect', [SocialAuthController::class, 'redirect'])
+            ->whereIn('provider', ['google', 'facebook'])
+            ->name('donor.social.redirect');
+
+        Route::get('/auth/{provider}/callback', [SocialAuthController::class, 'callback'])
+            ->whereIn('provider', ['google', 'facebook'])
+            ->name('donor.social.callback');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Donor Protected Routes
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('auth:donor')->group(function () {
+        Route::post('/logout', [DonorAuthenticatedSessionController::class, 'destroy'])->name('donor.logout');
+
+        Route::get('/account', [AccountController::class, 'dashboard'])->name('donor.dashboard');
+        Route::get('/my-donations', [AccountController::class, 'donations'])->name('donor.donations');
+
+        Route::get('/account/profile', [AccountController::class, 'profile'])->name('donor.profile');
+        Route::put('/account/profile', [AccountController::class, 'updateProfile'])->name('donor.profile.update');
+
+        Route::get('/account/security', [AccountController::class, 'security'])->name('donor.security');
+        Route::put('/account/security', [AccountController::class, 'updatePassword'])->name('donor.security.update');
+    });
 };
 
 /*
@@ -61,36 +100,32 @@ $publicRoutes = function () {
 | Arabic (default - no prefix)
 |--------------------------------------------------------------------------
 */
-Route::group([], $publicRoutes);
+Route::group([], $userFacingRoutes);
 
 /*
 |--------------------------------------------------------------------------
-| English (prefix + name prefix)
+| English (prefix + route name prefix)
 |--------------------------------------------------------------------------
 */
-Route::prefix('en')->name('en.')->group($publicRoutes);
+Route::prefix('en')->name('en.')->group($userFacingRoutes);
 
 /*
 |--------------------------------------------------------------------------
-| Profile
+| Admin Auth Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
+require __DIR__ . '/admin/auth.php';
 
 /*
 |--------------------------------------------------------------------------
-| Admin Routes (separated file)
+| Admin Panel Routes
 |--------------------------------------------------------------------------
 */
 require __DIR__ . '/admin.php';
 
 /*
 |--------------------------------------------------------------------------
-| Auth Routes (Breeze/Jetstream/etc)
+| Auth Routes (Breeze) - disabled for now
 |--------------------------------------------------------------------------
 */
-require __DIR__ . '/auth.php';
+// require __DIR__ . '/auth.php';

@@ -3,13 +3,12 @@
 
 @section('content')
     @php
-        $isEn = app()->getLocale() === 'en';
-        $base = $isEn ? '/en' : '';
+        $isEn = app()->isLocale('en');
 
-        $urlReports = url($base . '/transparency/reports');
-        $urlTransparency = url($base . '/transparency');
+        $urlReports = locale_route('reports.index');
+        $urlTransparency = locale_route('transparency');
 
-        $campTitle = $report->campaign
+        $campaignTitle = $report->campaign
             ? ($isEn
                 ? ($report->campaign->title_en ?:
                 $report->campaign->title_ar)
@@ -17,19 +16,11 @@
                 $report->campaign->title_en))
             : null;
 
-        // Route-safe back
-        $backToReports =
-            function_exists('route') && \Illuminate\Support\Facades\Route::has('reports.index')
-                ? route('reports.index')
-                : $urlReports;
-
         $copyLabel = $isEn ? 'Copy link' : 'نسخ الرابط';
         $copiedLabel = $isEn ? 'Copied!' : 'تم النسخ!';
     @endphp
 
     <div class="max-w-4xl mx-auto">
-
-        {{-- Breadcrumb --}}
         <div class="mb-6 text-sm text-subtext">
             <a class="hover:underline underline-offset-4" href="{{ $urlTransparency }}">
                 {{ $isEn ? 'Transparency' : 'الشفافية' }}
@@ -57,8 +48,8 @@
 
                     <div class="text-sm text-subtext mt-2">
                         {{ $report->period_label }}
-                        @if ($campTitle)
-                            · {{ $campTitle }}
+                        @if ($campaignTitle)
+                            · {{ $campaignTitle }}
                         @endif
                     </div>
                 </div>
@@ -96,7 +87,7 @@
                     </button>
                 </div>
 
-                <a class="btn btn-secondary text-center" href="{{ $backToReports }}">
+                <a class="btn btn-secondary text-center" href="{{ $urlReports }}">
                     {{ $isEn ? 'Back to reports' : 'العودة للتقارير' }}
                 </a>
             </div>

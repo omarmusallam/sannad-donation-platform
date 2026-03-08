@@ -260,7 +260,7 @@
                     <span class="text-slate-500" aria-hidden="true">↗</span>
                 </a>
 
-                <form method="POST" action="{{ route('logout') }}">
+                <form method="POST" action="{{ route('admin.logout') }}">
                     @csrf
                     <button type="submit"
                         class="w-full px-3 py-2.5 rounded-2xl text-sm bg-rose-50 text-rose-700 hover:bg-rose-100 transition font-semibold border border-rose-200/60">
@@ -322,7 +322,7 @@
 
                                     <div class="border-t border-slate-200"></div>
 
-                                    <form method="POST" action="{{ route('logout') }}">
+                                    <form method="POST" action="{{ route('admin.logout') }}">
                                         @csrf
                                         <button type="submit"
                                             class="w-full text-{{ $isAr ? 'right' : 'left' }} px-4 py-3 text-sm hover:bg-rose-50 text-rose-700"

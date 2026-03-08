@@ -9,14 +9,10 @@ class SetLocale
 {
     public function handle(Request $request, Closure $next)
     {
-        // /en/... => English
-        if ($request->segment(1) === 'en') {
-            app()->setLocale('en');
-            return $next($request);
-        }
+        $locale = $request->segment(1) === 'en' ? 'en' : 'ar';
 
-        // الافتراضي عربي (مع إمكانية cookie لاحقًا)
-        app()->setLocale('ar');
+        app()->setLocale($locale);
+
         return $next($request);
     }
 }

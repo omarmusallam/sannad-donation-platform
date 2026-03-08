@@ -1,34 +1,50 @@
 @extends('layouts.public')
-@section('title', app()->getLocale() === 'en' ? 'Transparency' : 'الشفافية')
+@section('title', app()->isLocale('en') ? 'Transparency' : 'الشفافية')
 
 @section('content')
     @php
-        $isEn = app()->getLocale() === 'en';
-        $base = $isEn ? '/en' : '';
-        $money = fn($v) => number_format((float) $v, 2);
+        $isEn = app()->isLocale('en');
+        $money = fn($value) => number_format((float) $value, 2);
 
         $title = $isEn ? 'Transparency Hub' : 'مركز الشفافية';
         $subtitle = $isEn
             ? 'Clear totals, verified reports, and proof of impact.'
             : 'إجماليات واضحة، تقارير موثقة، وإثبات أثر.';
 
-        $campaignTitle = fn($c) => $isEn ? ($c->title_en ?: $c->title_ar) : ($c->title_ar ?: $c->title_en);
+        $campaignTitle = fn($campaign) => $isEn
+            ? ($campaign->title_en ?:
+            $campaign->title_ar)
+            : ($campaign->title_ar ?:
+            $campaign->title_en);
 
-        $reportTitle = fn($r) => $isEn ? ($r->title_en ?: $r->title_ar) : ($r->title_ar ?: $r->title_en);
-        $reportSummary = fn($r) => $isEn ? ($r->summary_en ?: $r->summary_ar) : ($r->summary_ar ?: $r->summary_en);
+        $reportTitle = fn($report) => $isEn
+            ? ($report->title_en ?:
+            $report->title_ar)
+            : ($report->title_ar ?:
+            $report->title_en);
+
+        $reportSummary = fn($report) => $isEn
+            ? ($report->summary_en ?:
+            $report->summary_ar)
+            : ($report->summary_ar ?:
+            $report->summary_en);
 
         $pct = function ($paidTotal, $goal) {
             $goal = (float) $goal;
             if ($goal <= 0) {
                 return 0;
             }
-            $p = ((float) $paidTotal / $goal) * 100;
-            return (int) max(0, min(100, round($p)));
+
+            $percent = ((float) $paidTotal / $goal) * 100;
+            return (int) max(0, min(100, round($percent)));
         };
 
-        $urlReports = url($base . '/transparency/reports');
-        $urlCampaigns = url($base . '/campaigns');
-        $urlDonate = url($base . '/donate');
+        $urlReports = locale_route('reports.index');
+        $urlCampaigns = locale_route('campaigns.index');
+        $urlDonate = locale_route('donate');
+
+        $campaignShowUrl = fn($campaign) => locale_route('campaigns.show', ['slug' => $campaign->slug]);
+        $reportShowUrl = fn($report) => locale_route('reports.show', ['report' => $report->id]);
 
         $kTotalPaid = (float) ($totalPaid ?? 0);
         $kPaidCount = (int) ($paidDonationsCount ?? 0);
@@ -36,7 +52,6 @@
         $kActiveCampaigns = (int) ($activeCampaigns ?? 0);
     @endphp
 
-    {{-- HERO --}}
     <section class="relative overflow-hidden rounded-[28px] border border-border bg-surface p-7 sm:p-10 mb-8">
         <div class="absolute inset-0 -z-10 bg-gradient-to-b from-muted via-bg to-transparent"></div>
         <div class="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full blur-3xl opacity-25"
@@ -73,7 +88,6 @@
                 </div>
             </div>
 
-            {{-- Mini note --}}
             <div class="rounded-2xl border border-border bg-surface/70 p-5 text-sm max-w-md">
                 <div class="font-black text-text mb-2">
                     {{ $isEn ? 'What you’ll find here' : 'ماذا ستجد هنا' }}
@@ -87,7 +101,6 @@
         </div>
     </section>
 
-    {{-- KPI GRID --}}
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
         <div class="card p-6">
             <div class="text-sm text-subtext">{{ $isEn ? 'Total paid donations' : 'إجمالي التبرعات المدفوعة' }}</div>
@@ -111,8 +124,6 @@
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-        {{-- Top campaigns --}}
         <div class="card p-6">
             <div class="flex items-center justify-between gap-4 mb-4">
                 <h2 class="text-lg font-black text-text">{{ $isEn ? 'Top campaigns' : 'أعلى الحملات' }}</h2>
@@ -122,35 +133,35 @@
             </div>
 
             <div class="space-y-3">
-                @forelse ($topCampaigns as $c)
+                @forelse ($topCampaigns as $campaign)
                     @php
-                        $paid = (float) ($c->paid_total ?? 0);
-                        $p = $pct($paid, $c->goal_amount);
-                        $href = url($base . '/campaigns/' . $c->slug);
+                        $paid = (float) ($campaign->paid_total ?? 0);
+                        $progress = $pct($paid, $campaign->goal_amount);
                     @endphp
 
-                    <a href="{{ $href }}"
+                    <a href="{{ $campaignShowUrl($campaign) }}"
                         class="block rounded-2xl border border-border hover:bg-muted transition p-4">
                         <div class="flex justify-between gap-3">
                             <div class="font-black text-text line-clamp-1">
-                                {{ $campaignTitle($c) }}
-                                @if ($c->is_featured)
+                                {{ $campaignTitle($campaign) }}
+                                @if ($campaign->is_featured)
                                     <span class="ms-2 inline-flex align-middle badge badge-brand">
                                         {{ $isEn ? 'Featured' : 'مميزة' }}
                                     </span>
                                 @endif
                             </div>
-                            <div class="text-sm font-black text-text">{{ $p }}%</div>
+                            <div class="text-sm font-black text-text">{{ $progress }}%</div>
                         </div>
 
                         <div class="mt-2 h-2 bg-muted rounded-full overflow-hidden">
                             <div class="h-2 rounded-full"
-                                style="width: {{ $p }}%; background: linear-gradient(135deg, rgb(var(--brand)), rgb(var(--brand2)));">
+                                style="width: {{ $progress }}%; background: linear-gradient(135deg, rgb(var(--brand)), rgb(var(--brand2)));">
                             </div>
                         </div>
 
                         <div class="mt-2 text-xs text-subtext">
-                            {{ $money($paid) }} {{ $c->currency }} / {{ $money($c->goal_amount) }} {{ $c->currency }}
+                            {{ $money($paid) }} {{ $campaign->currency }} / {{ $money($campaign->goal_amount) }}
+                            {{ $campaign->currency }}
                         </div>
                     </a>
                 @empty
@@ -159,7 +170,6 @@
             </div>
         </div>
 
-        {{-- Latest reports --}}
         <div class="card p-6">
             <div class="flex items-center justify-between gap-4 mb-4">
                 <h2 class="text-lg font-black text-text">{{ $isEn ? 'Latest reports' : 'أحدث التقارير' }}</h2>
@@ -169,19 +179,19 @@
             </div>
 
             <div class="space-y-3">
-                @forelse($latestReports as $r)
-                    <a href="{{ url($base . '/transparency/reports/' . $r->id) }}"
+                @forelse($latestReports as $report)
+                    <a href="{{ $reportShowUrl($report) }}"
                         class="block rounded-2xl border border-border hover:bg-muted transition p-4">
-                        <div class="font-black text-text line-clamp-1">{{ $reportTitle($r) }}</div>
+                        <div class="font-black text-text line-clamp-1">{{ $reportTitle($report) }}</div>
                         <div class="text-xs text-subtext mt-1">
-                            {{ $r->period_year ? $r->period_year . '-' . $r->period_month : ($isEn ? 'General' : 'عام') }}
-                            @if ($r->campaign)
+                            {{ $report->period_year ? $report->period_year . '-' . $report->period_month : ($isEn ? 'General' : 'عام') }}
+                            @if ($report->campaign)
                                 ·
-                                {{ $isEn ? ($r->campaign->title_en ?: $r->campaign->title_ar) : ($r->campaign->title_ar ?: $r->campaign->title_en) }}
+                                {{ $isEn ? ($report->campaign->title_en ?: $report->campaign->title_ar) : ($report->campaign->title_ar ?: $report->campaign->title_en) }}
                             @endif
                         </div>
                         <div class="mt-2 text-sm text-subtext line-clamp-2">
-                            {{ $reportSummary($r) ?: ($isEn ? 'Open to view details and PDF.' : 'افتح لعرض التفاصيل وملف PDF.') }}
+                            {{ $reportSummary($report) ?: ($isEn ? 'Open to view details and PDF.' : 'افتح لعرض التفاصيل وملف PDF.') }}
                         </div>
                     </a>
                 @empty
@@ -191,7 +201,6 @@
         </div>
     </div>
 
-    {{-- Latest donations --}}
     <div class="mt-6 card p-6">
         <div class="flex items-center justify-between gap-4 mb-4">
             <h2 class="text-lg font-black text-text">{{ $isEn ? 'Latest donations' : 'آخر التبرعات' }}</h2>
@@ -201,20 +210,20 @@
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            @forelse($latestDonations as $d)
+            @forelse($latestDonations as $donation)
                 <div class="rounded-2xl border border-border bg-muted p-4">
                     <div class="flex items-center justify-between gap-3">
                         <div class="font-bold text-text min-w-0">
                             <span class="line-clamp-1">
-                                {{ $d->is_anonymous ? ($isEn ? 'Anonymous' : 'مجهول') : ($d->donor_name ?: ($isEn ? 'Donor' : 'متبرع')) }}
+                                {{ $donation->is_anonymous ? ($isEn ? 'Anonymous' : 'مجهول') : ($donation->donor_name ?: ($isEn ? 'Donor' : 'متبرع')) }}
                             </span>
                         </div>
                         <div class="text-sm font-black text-text shrink-0">
-                            {{ $money($d->amount) }} {{ $d->currency }}
+                            {{ $money($donation->amount) }} {{ $donation->currency }}
                         </div>
                     </div>
                     <div class="mt-1 text-xs text-subtext">
-                        {{ $d->created_at->format('Y-m-d H:i') }}
+                        {{ $donation->created_at->format('Y-m-d H:i') }}
                     </div>
                 </div>
             @empty
@@ -223,7 +232,6 @@
         </div>
     </div>
 
-    {{-- CTA --}}
     <section class="mt-10">
         <div class="relative overflow-hidden rounded-[28px] border border-border bg-surface p-8 sm:p-10">
             <div class="absolute inset-0 -z-10 bg-gradient-to-b from-muted via-bg to-transparent"></div>

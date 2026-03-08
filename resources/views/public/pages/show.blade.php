@@ -5,20 +5,18 @@
 
 @section('content')
     @php
-        $isEn = app()->getLocale() === 'en';
-        $base = $isEn ? '/en' : '';
+        $isEn = app()->isLocale('en');
         $rtl = app()->isLocale('ar');
 
-        $urlHome = $base ? url($base) : url('/');
-        $urlDonate = url($base . '/donate');
-        $urlCampaigns = url($base . '/campaigns');
-        $urlTransparency = url($base . '/transparency');
+        $urlHome = locale_route('home');
+        $urlDonate = locale_route('donate');
+        $urlCampaigns = locale_route('campaigns.index');
+        $urlTransparency = locale_route('transparency');
 
         $title = $page->title();
         $desc = $page->metaDescription();
         $updated = $page->updated_at?->format('Y-m-d');
 
-        // Compact trust items (localized)
         $trust = [
             [
                 'title' => $isEn ? 'Verified campaigns' : 'حملات موثوقة',
@@ -37,14 +35,12 @@
             ],
         ];
 
-        // Content (safe string)
         $contentHtml = (string) ($page->content() ?? '');
         $shareLabel = $isEn ? 'Copy page link' : 'نسخ رابط الصفحة';
         $copiedLabel = $isEn ? 'Copied!' : 'تم النسخ!';
         $printLabel = $isEn ? 'Print' : 'طباعة';
     @endphp
 
-    {{-- HERO --}}
     <section class="relative overflow-hidden rounded-[28px] border border-border bg-surface">
         <div class="absolute inset-0 -z-10 bg-gradient-to-b from-muted via-bg to-transparent"></div>
         <div class="pointer-events-none absolute -right-20 -top-24 h-80 w-80 rounded-full blur-3xl opacity-25"
@@ -53,7 +49,6 @@
             style="background: radial-gradient(circle, rgba(var(--brand2),.16), transparent 60%);"></div>
 
         <div class="px-6 sm:px-10 py-9 sm:py-12">
-            {{-- Top row: breadcrumb + trust pill --}}
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div class="text-sm text-subtext">
                     <a href="{{ $urlHome }}" class="hover:underline underline-offset-4">
@@ -73,7 +68,6 @@
             </div>
 
             <div class="mt-7 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                {{-- Left: title + actions --}}
                 <div class="lg:col-span-8">
                     <h1 class="text-3xl sm:text-4xl font-black tracking-tight text-text leading-tight">
                         {{ $title }}
@@ -100,7 +94,6 @@
                         </a>
                     </div>
 
-                    {{-- Meta row: updated + share + print --}}
                     <div class="mt-4 flex flex-wrap items-center gap-3 text-xs text-subtext">
                         @if ($updated)
                             <span
@@ -125,7 +118,6 @@
                         </button>
                     </div>
 
-                    {{-- Optional notice (trust) --}}
                     <div class="mt-6 card-muted p-4">
                         <div class="text-sm font-black text-text">
                             {{ $isEn ? 'Donor note' : 'ملاحظة للمتبرعين' }}
@@ -138,22 +130,21 @@
                     </div>
                 </div>
 
-                {{-- Right: trust cards --}}
                 <div class="lg:col-span-4 space-y-4">
                     <div class="grid gap-3">
-                        @foreach ($trust as $t)
+                        @foreach ($trust as $item)
                             <div class="rounded-2xl border border-border bg-surface/70 backdrop-blur px-4 py-4">
                                 <div class="flex items-start gap-3">
                                     <div
                                         class="h-10 w-10 rounded-2xl grid place-items-center border border-border bg-muted text-lg">
-                                        <span aria-hidden="true">{{ $t['icon'] }}</span>
+                                        <span aria-hidden="true">{{ $item['icon'] }}</span>
                                     </div>
                                     <div class="min-w-0">
                                         <div class="font-black text-text leading-tight">
-                                            {{ $t['title'] }}
+                                            {{ $item['title'] }}
                                         </div>
                                         <div class="mt-1 text-sm text-subtext leading-relaxed">
-                                            {{ $t['desc'] }}
+                                            {{ $item['desc'] }}
                                         </div>
                                     </div>
                                 </div>
@@ -161,7 +152,6 @@
                         @endforeach
                     </div>
 
-                    {{-- TOC (auto) --}}
                     <div class="card p-5">
                         <div class="flex items-center justify-between gap-3">
                             <div class="font-black text-text">
@@ -174,7 +164,6 @@
                         </div>
 
                         <div id="toc" class="mt-3">
-                            {{-- will be filled by JS --}}
                             <div class="text-sm text-subtext">
                                 {{ $isEn ? 'Loading sections…' : 'تحميل العناوين…' }}
                             </div>
@@ -185,7 +174,6 @@
                         </div>
                     </div>
 
-                    {{-- Help --}}
                     <div class="rounded-2xl border border-border bg-gradient-to-br from-muted to-bg p-5">
                         <div class="text-sm font-black text-text">
                             {{ $isEn ? 'Need help?' : 'هل تحتاج مساعدة؟' }}
@@ -203,11 +191,8 @@
         </div>
     </section>
 
-    {{-- BODY --}}
     <section class="mt-8">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-
-            {{-- Main content --}}
             <div class="lg:col-span-8">
                 <div class="card p-6 sm:p-8">
                     <article id="page-content"
@@ -229,7 +214,6 @@
                     </article>
                 </div>
 
-                {{-- Bottom CTA --}}
                 <div
                     class="mt-6 rounded-[28px] border border-border bg-gradient-to-br from-muted to-bg p-6 sm:p-8 relative overflow-hidden">
                     <div class="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full blur-3xl opacity-20"
@@ -243,7 +227,9 @@
                                 {{ $isEn ? 'Ready to make an impact?' : 'جاهز لتكون جزءًا من الأثر؟' }}
                             </div>
                             <div class="mt-2 text-subtext leading-relaxed max-w-2xl">
-                                {{ $isEn ? 'Choose a trusted campaign and follow progress with updates and reports.' : 'اختر حملة موثوقة وتابع التقدم عبر التحديثات والتقارير.' }}
+                                {{ $isEn
+                                    ? 'Choose a trusted campaign and follow progress with updates and reports.'
+                                    : 'اختر حملة موثوقة وتابع التقدم عبر التحديثات والتقارير.' }}
                             </div>
                         </div>
 
@@ -260,10 +246,7 @@
                 </div>
             </div>
 
-            {{-- Side rail --}}
             <aside class="lg:col-span-4 lg:sticky lg:top-24 space-y-4">
-
-                {{-- Quick actions --}}
                 <div class="card p-5">
                     <div class="font-black text-text">{{ $isEn ? 'Quick actions' : 'إجراءات سريعة' }}</div>
                     <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
@@ -283,7 +266,6 @@
                     </div>
                 </div>
 
-                {{-- Reading tips --}}
                 <div class="card-muted p-5">
                     <div class="font-black text-text">{{ $isEn ? 'Reading tips' : 'نصائح قراءة' }}</div>
                     <ul class="mt-3 space-y-2 text-sm text-subtext">
@@ -294,14 +276,12 @@
                         <li>• {{ $isEn ? 'Print-friendly layout included.' : 'التخطيط مناسب للطباعة.' }}</li>
                     </ul>
                 </div>
-
             </aside>
         </div>
     </section>
 
     @push('head')
         <style>
-            /* Print polish */
             @media print {
 
                 header,
@@ -334,47 +314,51 @@
                 const toc = document.getElementById('toc');
                 if (!root || !toc) return;
 
-                // find headings
                 const headings = root.querySelectorAll('h2, h3');
+
                 if (!headings.length) {
                     toc.innerHTML =
                         `<div class="text-sm text-subtext">{{ $isEn ? 'No sections found.' : 'لا توجد أقسام.' }}</div>`;
                     return;
                 }
 
-                // build ids + list
                 const ul = document.createElement('ul');
                 ul.className = 'space-y-2 text-sm';
 
-                headings.forEach((h, idx) => {
-                    // create id if missing
-                    if (!h.id) {
-                        const base = (h.textContent || 'section').trim().toLowerCase()
+                headings.forEach((heading, index) => {
+                    if (!heading.id) {
+                        const base = (heading.textContent || 'section')
+                            .trim()
+                            .toLowerCase()
                             .replace(/\s+/g, '-')
                             .replace(/[^\w\-ء-ي]+/g, '');
-                        h.id = (base ? base : 'section') + '-' + (idx + 1);
+
+                        heading.id = (base ? base : 'section') + '-' + (index + 1);
                     }
 
                     const li = document.createElement('li');
-                    const a = document.createElement('a');
-                    a.href = `#${h.id}`;
-                    a.textContent = h.textContent || '';
-                    a.className =
-                        'block rounded-xl border border-border bg-surface hover:bg-muted transition px-3 py-2 ' +
-                        (h.tagName.toLowerCase() === 'h3' ? 'ms-4 text-subtext' : 'font-semibold text-text');
+                    const link = document.createElement('a');
 
-                    a.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        const el = document.getElementById(h.id);
+                    link.href = `#${heading.id}`;
+                    link.textContent = heading.textContent || '';
+                    link.className =
+                        'block rounded-xl border border-border bg-surface hover:bg-muted transition px-3 py-2 ' +
+                        (heading.tagName.toLowerCase() === 'h3' ? 'ms-4 text-subtext' : 'font-semibold text-text');
+
+                    link.addEventListener('click', function(event) {
+                        event.preventDefault();
+                        const el = document.getElementById(heading.id);
                         if (!el) return;
+
                         el.scrollIntoView({
                             behavior: 'smooth',
                             block: 'start'
                         });
-                        history.replaceState(null, '', `#${h.id}`);
+
+                        history.replaceState(null, '', `#${heading.id}`);
                     });
 
-                    li.appendChild(a);
+                    li.appendChild(link);
                     ul.appendChild(li);
                 });
 

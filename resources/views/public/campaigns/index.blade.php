@@ -1,37 +1,45 @@
 @extends('layouts.public')
+
 @section('title', __('ui.campaigns'))
 
 @section('content')
     @php
-        $isEn = app()->getLocale() === 'en';
-        $base = $isEn ? '/en' : '';
+        $isEn = app()->isLocale('en');
 
         $subtitle = $isEn
             ? 'Explore active campaigns and donate with confidence.'
             : 'استعرض الحملات النشطة وتبرّع بثقة.';
 
-        $t = fn($c) => $isEn ? ($c->title_en ?: $c->title_ar) : ($c->title_ar ?: $c->title_en);
-        $d = fn($c) => $isEn ? ($c->description_en ?: $c->description_ar) : ($c->description_ar ?: $c->description_en);
+        $campaignTitle = fn($campaign) => $isEn
+            ? ($campaign->title_en ?:
+            $campaign->title_ar)
+            : ($campaign->title_ar ?:
+            $campaign->title_en);
 
-        $money = fn($v) => number_format((float) $v, 2);
+        $campaignDesc = fn($campaign) => $isEn
+            ? ($campaign->description_en ?:
+            $campaign->description_ar)
+            : ($campaign->description_ar ?:
+            $campaign->description_en);
 
-        $statusLabel = function ($st) use ($isEn) {
-            return match ((string) $st) {
+        $money = fn($value) => number_format((float) $value, 2);
+
+        $statusLabel = function ($status) use ($isEn) {
+            return match ((string) $status) {
                 'active' => $isEn ? 'Active' : 'نشطة',
                 'paused' => $isEn ? 'Paused' : 'متوقفة مؤقتًا',
-                default => (string) $st,
+                default => (string) $status,
             };
         };
 
-        $statusBadge = function ($st) {
-            return match ((string) $st) {
+        $statusBadge = function ($status) {
+            return match ((string) $status) {
                 'active' => 'bg-success/10 text-success border-success/25',
                 'paused' => 'bg-warning/10 text-warning border-warning/25',
                 default => 'bg-muted text-subtext border-border',
             };
         };
 
-        // values from controller (or fallback)
         $q = $q ?? request('q', '');
         $status = $status ?? request('status');
         $featured = $featured ?? request('featured');
@@ -39,12 +47,12 @@
 
         $hasFilters = (bool) ($q || $status || $featured === '1' || $sort !== 'featured');
 
-        $urlDonate = url($base . '/donate');
-        $urlTransparency = url($base . '/transparency');
-        $urlReset = url($base . '/campaigns');
+        $urlDonate = locale_route('donate');
+        $urlTransparency = locale_route('transparency');
+        $urlReset = locale_route('campaigns.index');
+        $campaignShowUrl = fn($campaign) => locale_route('campaigns.show', ['slug' => $campaign->slug]);
     @endphp
 
-    {{-- Header --}}
     <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5 mb-8">
         <div>
             <h1 class="text-3xl sm:text-4xl font-black tracking-tight text-text">
@@ -65,7 +73,6 @@
         </div>
     </div>
 
-    {{-- Filters --}}
     <form method="get" class="card p-5 sm:p-6 mb-8">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-end">
             <div class="lg:col-span-5">
@@ -113,25 +120,27 @@
             </div>
         </div>
 
-        {{-- active filters chips --}}
         <div class="mt-4 flex flex-wrap gap-2">
             @if ($q)
                 <span class="badge">
                     {{ $isEn ? 'Query:' : 'بحث:' }} <span class="font-black text-text">{{ $q }}</span>
                 </span>
             @endif
+
             @if ($status)
                 <span class="badge">
-                    {{ $isEn ? 'Status:' : 'الحالة:' }} <span
-                        class="font-black text-text">{{ $statusLabel($status) }}</span>
+                    {{ $isEn ? 'Status:' : 'الحالة:' }}
+                    <span class="font-black text-text">{{ $statusLabel($status) }}</span>
                 </span>
             @endif
+
             @if ($featured === '1')
                 <span class="badge"
                     style="border-color: rgba(var(--brand),.25); color: rgb(var(--brand)); background: rgba(var(--brand),.08);">
                     {{ $isEn ? 'Featured only' : 'مميزة فقط' }}
                 </span>
             @endif
+
             @if ($sort && $sort !== 'featured')
                 <span class="badge">
                     {{ $isEn ? 'Sort:' : 'الترتيب:' }} <span class="font-black text-text">{{ $sort }}</span>
@@ -146,28 +155,29 @@
         </div>
     </form>
 
-    {{-- Grid --}}
     @if ($campaigns->count())
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            @foreach ($campaigns as $c)
+            @foreach ($campaigns as $campaign)
                 @php
-                    $img = $c->cover_url ?? ($c->cover_image_path ? asset('storage/' . $c->cover_image_path) : null);
-                    $progress = (int) ($c->progress_percent ?? 0);
+                    $imageUrl =
+                        $campaign->cover_url ??
+                        ($campaign->cover_image_path ? asset('storage/' . $campaign->cover_image_path) : null);
+                    $progress = (int) ($campaign->progress_percent ?? 0);
                     $progress = max(0, min(100, $progress));
                 @endphp
 
-                <a href="{{ url($base . '/campaigns/' . $c->slug) }}"
+                <a href="{{ $campaignShowUrl($campaign) }}"
                     class="group block rounded-[26px] border border-border bg-surface overflow-hidden hover:bg-muted transition">
 
                     <div class="relative h-44 bg-muted">
-                        @if ($img)
-                            <img src="{{ $img }}" alt="" class="w-full h-full object-cover">
+                        @if ($imageUrl)
+                            <img src="{{ $imageUrl }}" alt="" class="w-full h-full object-cover">
                         @else
                             <div class="w-full h-full bg-gradient-to-br from-muted to-bg"></div>
                         @endif
 
                         <div class="absolute top-3 {{ $isEn ? 'right-3' : 'left-3' }} flex items-center gap-2">
-                            @if ($c->is_featured)
+                            @if ($campaign->is_featured)
                                 <span class="text-[11px] px-3 py-1 rounded-full border font-black"
                                     style="border-color: rgba(var(--brand),.25); color: rgb(var(--brand)); background: rgba(var(--brand),.08);">
                                     {{ $isEn ? 'Featured' : 'مميزة' }}
@@ -175,8 +185,8 @@
                             @endif
 
                             <span
-                                class="text-[11px] px-3 py-1 rounded-full border font-black {{ $statusBadge($c->status) }}">
-                                {{ $statusLabel($c->status) }}
+                                class="text-[11px] px-3 py-1 rounded-full border font-black {{ $statusBadge($campaign->status) }}">
+                                {{ $statusLabel($campaign->status) }}
                             </span>
                         </div>
 
@@ -185,25 +195,25 @@
 
                     <div class="p-6">
                         <h2 class="text-lg font-black text-text leading-snug line-clamp-2">
-                            {{ $t($c) }}
+                            {{ $campaignTitle($campaign) }}
                         </h2>
 
                         <p class="mt-2 text-sm text-subtext leading-relaxed line-clamp-2">
-                            {{ $d($c) ?: ($isEn ? 'No description yet.' : 'لا يوجد وصف بعد.') }}
+                            {{ $campaignDesc($campaign) ?: ($isEn ? 'No description yet.' : 'لا يوجد وصف بعد.') }}
                         </p>
 
                         <div class="mt-5 grid grid-cols-2 gap-3 text-sm">
                             <div class="card-muted p-3">
                                 <div class="text-xs text-subtext">{{ $isEn ? 'Raised' : 'تم جمع' }}</div>
                                 <div class="mt-1 font-black text-text">
-                                    {{ $money($c->current_amount) }} {{ $c->currency }}
+                                    {{ $money($campaign->current_amount) }} {{ $campaign->currency }}
                                 </div>
                             </div>
 
                             <div class="card-muted p-3">
                                 <div class="text-xs text-subtext">{{ $isEn ? 'Goal' : 'الهدف' }}</div>
                                 <div class="mt-1 font-black text-text">
-                                    {{ $money($c->goal_amount) }} {{ $c->currency }}
+                                    {{ $money($campaign->goal_amount) }} {{ $campaign->currency }}
                                 </div>
                             </div>
                         </div>
@@ -211,7 +221,8 @@
                         <div class="mt-5">
                             <div class="flex justify-between text-xs text-subtext mb-2">
                                 <span class="font-black text-text">{{ $progress }}%</span>
-                                <span>{{ $isEn ? 'Donors' : 'متبرعون' }}: {{ (int) ($c->donors_count ?? 0) }}</span>
+                                <span>{{ $isEn ? 'Donors' : 'متبرعون' }}:
+                                    {{ (int) ($campaign->donors_count ?? 0) }}</span>
                             </div>
 
                             <div class="h-2 bg-muted rounded-full overflow-hidden border border-border">

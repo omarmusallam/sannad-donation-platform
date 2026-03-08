@@ -20,13 +20,15 @@ class DatabaseSeeder extends Seeder
         // ]);
 
         $this->call([
-            // CampaignSeeder::class,
-            // DonationSeeder::class,
-            // ReportSeeder::class,
-            // CampaignUpdateSeeder::class,
-            // SettingsSeeder::class,
-            // RolesAndPermissionsSeeder::class,
-            // PagesSeeder::class
+            CampaignSeeder::class,
+            DonationSeeder::class,
+            ReportSeeder::class,
+            CampaignUpdateSeeder::class,
+            SettingsSeeder::class,
+            RolesAndPermissionsSeeder::class,
+            PagesSeeder::class,
+            AdminUserSeeder::class,
+
         ]);
     }
 }

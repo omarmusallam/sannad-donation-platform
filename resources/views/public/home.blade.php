@@ -1,46 +1,46 @@
 @extends('layouts.public')
 
-@section('title', app()->getLocale() === 'en' ? 'Home' : 'الرئيسية')
+@section('title', app()->isLocale('en') ? 'Home' : 'الرئيسية')
 
 @section('content')
     @php
-        $isEn = app()->getLocale() === 'en';
+        $isEn = app()->isLocale('en');
 
-        $get = function (string $key, $default = null) {
-            try {
-                return function_exists('setting') ? setting($key, $default) : $default;
-            } catch (\Throwable $e) {
-                return $default;
-            }
-        };
+        $siteName = (string) ($appSettings['site.name'] ?? config('app.name'));
+        $tagline = (string) ($appSettings['site.tagline'] ?? '');
 
-        $siteName = (string) $get('site.name', config('app.name'));
-        $tagline = (string) $get('site.tagline', '');
+        $urlDonate = locale_route('donate');
+        $urlCampaigns = locale_route('campaigns.index');
+        $urlTransparency = locale_route('transparency');
+        $urlReports = locale_route('reports.index');
 
-        $base = $isEn ? '/en' : '';
-        $urlDonate = url($base . '/donate');
-        $urlCampaigns = url($base . '/campaigns');
-        $urlTransparency = url($base . '/transparency');
-        $urlReports = url($base . '/transparency/reports');
+        $money = fn($value) => number_format((float) $value, 2);
 
-        $money = function ($v) {
-            return number_format((float) $v, 2);
-        };
+        $campaignTitle = fn($campaign) => $isEn
+            ? ($campaign->title_en ?:
+            $campaign->title_ar)
+            : ($campaign->title_ar ?:
+            $campaign->title_en);
 
-        $campaignTitle = fn($c) => $isEn ? ($c->title_en ?: $c->title_ar) : ($c->title_ar ?: $c->title_en);
-        $campaignDesc = fn($c) => $isEn
-            ? ($c->description_en ?:
-            $c->description_ar)
-            : ($c->description_ar ?:
-            $c->description_en);
+        $campaignDesc = fn($campaign) => $isEn
+            ? ($campaign->description_en ?:
+            $campaign->description_ar)
+            : ($campaign->description_ar ?:
+            $campaign->description_en);
+
+        $campaignUrl = fn($campaign) => locale_route('campaigns.show', ['slug' => $campaign->slug]);
+        $reportUrl = fn($report) => locale_route('reports.show', ['report' => $report->id]);
 
         $pct = function ($current, $goal) {
             $goal = (float) $goal;
+
             if ($goal <= 0) {
                 return 0;
             }
-            $p = ((float) $current / $goal) * 100;
-            return (int) max(0, min(100, round($p)));
+
+            $percent = ((float) $current / $goal) * 100;
+
+            return (int) max(0, min(100, round($percent)));
         };
 
         $kTotalPaid = (float) ($totalPaid ?? 0);
@@ -50,6 +50,7 @@
         $kAvgDonation = (float) ($avgDonation ?? 0);
 
         $heroTitle = $isEn ? 'Donate with trust. See the impact clearly.' : 'تبرّع بثقة. وشاهد الأثر بوضوح.';
+
         $heroDesc =
             $tagline ?:
             ($isEn
@@ -64,29 +65,27 @@
 
         $steps = [
             [
-                't' => $isEn ? 'Choose a campaign' : 'اختر حملة',
-                'd' => $isEn
+                'title' => $isEn ? 'Choose a campaign' : 'اختر حملة',
+                'desc' => $isEn
                     ? 'Pick a cause and review goals and details.'
                     : 'اختر قضية تهمك واطّلع على الهدف والتفاصيل.',
             ],
             [
-                't' => $isEn ? 'Donate in minutes' : 'تبرّع خلال دقائق',
-                'd' => $isEn
+                'title' => $isEn ? 'Donate in minutes' : 'تبرّع خلال دقائق',
+                'desc' => $isEn
                     ? 'Clean flow with optional anonymity and instant confirmation.'
                     : 'تجربة بسيطة مع خيار إخفاء الاسم وتأكيد فوري.',
             ],
             [
-                't' => $isEn ? 'Follow updates & reports' : 'تابع التحديثات والتقارير',
-                'd' => $isEn
+                'title' => $isEn ? 'Follow updates & reports' : 'تابع التحديثات والتقارير',
+                'desc' => $isEn
                     ? 'Track progress through updates and periodic public reports.'
                     : 'راقب التقدم عبر التحديثات والتقارير العامة الدورية.',
             ],
         ];
     @endphp
 
-    {{-- HERO --}}
     <section class="relative overflow-hidden rounded-[28px] border border-border bg-surface">
-        {{-- premium background --}}
         <div class="absolute inset-0 -z-10 bg-gradient-to-b from-muted via-bg to-transparent"></div>
         <div class="pointer-events-none absolute -top-20 -right-20 h-72 w-72 rounded-full blur-3xl opacity-25"
             style="background: radial-gradient(circle, rgba(var(--brand),.22), transparent 60%);"></div>
@@ -94,7 +93,6 @@
             style="background: radial-gradient(circle, rgba(var(--brand2),.18), transparent 60%);"></div>
 
         <div class="p-6 sm:p-10 lg:p-12 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-            {{-- LEFT --}}
             <div>
                 <div
                     class="inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-1.5 text-xs font-bold text-subtext">
@@ -110,14 +108,12 @@
                     {{ $heroDesc }}
                 </p>
 
-                {{-- Trust chips --}}
                 <div class="mt-5 flex flex-wrap gap-2">
                     @foreach ($trustChips as $chip)
                         <span class="badge">{{ $chip }}</span>
                     @endforeach
                 </div>
 
-                {{-- CTA --}}
                 <div class="mt-7 flex flex-wrap gap-3">
                     <a href="{{ $urlDonate }}" class="btn btn-primary">
                         {{ $isEn ? 'Donate now' : 'تبرّع الآن' }}
@@ -133,20 +129,22 @@
                     </a>
                 </div>
 
-                {{-- KPIs --}}
                 <div class="mt-8 grid grid-cols-1 sm:grid-cols-4 gap-3">
                     <div class="card p-4">
                         <div class="text-xs text-subtext">{{ $isEn ? 'Total paid' : 'إجمالي المدفوع' }}</div>
                         <div class="mt-1 font-black text-text">{{ $money($kTotalPaid) }}</div>
                     </div>
+
                     <div class="card p-4">
                         <div class="text-xs text-subtext">{{ $isEn ? 'Donors' : 'المتبرعون' }}</div>
                         <div class="mt-1 font-black text-text">{{ number_format($kDonorsCount) }}</div>
                     </div>
+
                     <div class="card p-4">
                         <div class="text-xs text-subtext">{{ $isEn ? 'Paid donations' : 'تبرعات مدفوعة' }}</div>
                         <div class="mt-1 font-black text-text">{{ number_format($kPaidCount) }}</div>
                     </div>
+
                     <div class="card p-4">
                         <div class="text-xs text-subtext">{{ $isEn ? 'Active campaigns' : 'حملات نشطة' }}</div>
                         <div class="mt-1 font-black text-text">{{ number_format($kActiveCampaign) }}</div>
@@ -161,7 +159,6 @@
                 @endif
             </div>
 
-            {{-- RIGHT: Featured campaigns --}}
             <div class="card p-6 sm:p-8">
                 <div class="flex items-center justify-between mb-4">
                     <div class="text-sm font-black text-text">{{ $isEn ? 'Featured campaigns' : 'حملات بارزة' }}</div>
@@ -172,18 +169,20 @@
 
                 @if (!empty($featuredCampaigns) && $featuredCampaigns->count())
                     <div class="grid grid-cols-1 gap-3">
-                        @foreach ($featuredCampaigns as $c)
+                        @foreach ($featuredCampaigns as $campaign)
                             @php
-                                $p = $pct($c->current_amount, $c->goal_amount);
-                                $img = $c->cover_image_path ? asset('storage/' . $c->cover_image_path) : null;
+                                $progress = $pct($campaign->current_amount, $campaign->goal_amount);
+                                $imageUrl = $campaign->cover_image_path
+                                    ? asset('storage/' . $campaign->cover_image_path)
+                                    : null;
                             @endphp
 
-                            <a href="{{ url($base . '/campaigns/' . $c->slug) }}"
+                            <a href="{{ $campaignUrl($campaign) }}"
                                 class="group block rounded-3xl border border-border bg-surface hover:bg-muted transition overflow-hidden">
                                 <div class="flex gap-4 p-4">
                                     <div class="shrink-0">
-                                        @if ($img)
-                                            <img src="{{ $img }}" alt=""
+                                        @if ($imageUrl)
+                                            <img src="{{ $imageUrl }}" alt=""
                                                 class="w-16 h-16 rounded-2xl object-cover border border-border bg-muted">
                                         @else
                                             <div
@@ -200,14 +199,14 @@
                                             <div class="min-w-0">
                                                 <div
                                                     class="font-black text-text line-clamp-1 group-hover:underline underline-offset-4">
-                                                    {{ $campaignTitle($c) }}
+                                                    {{ $campaignTitle($campaign) }}
                                                 </div>
                                                 <div class="text-xs text-subtext mt-1 line-clamp-2">
-                                                    {{ $campaignDesc($c) ?: ($isEn ? 'No description yet.' : 'لا يوجد وصف بعد.') }}
+                                                    {{ $campaignDesc($campaign) ?: ($isEn ? 'No description yet.' : 'لا يوجد وصف بعد.') }}
                                                 </div>
                                             </div>
 
-                                            @if ($c->is_featured)
+                                            @if ($campaign->is_featured)
                                                 <span
                                                     class="text-[11px] px-2 py-0.5 rounded-full bg-muted border border-border font-black text-brand">
                                                     {{ $isEn ? 'Featured' : 'مميزة' }}
@@ -215,19 +214,18 @@
                                             @endif
                                         </div>
 
-                                        {{-- progress --}}
                                         <div class="mt-3 h-2 bg-muted rounded-full overflow-hidden border border-border">
                                             <div class="h-2 rounded-full"
-                                                style="width: {{ $p }}%; background: linear-gradient(135deg, rgb(var(--brand)), rgb(var(--brand2)));">
+                                                style="width: {{ $progress }}%; background: linear-gradient(135deg, rgb(var(--brand)), rgb(var(--brand2)));">
                                             </div>
                                         </div>
 
                                         <div class="mt-2 flex justify-between text-xs text-subtext">
-                                            <span class="font-black text-text">{{ $p }}%</span>
+                                            <span class="font-black text-text">{{ $progress }}%</span>
                                             <span>
-                                                {{ $money($c->current_amount) }} {{ $c->currency }}
+                                                {{ $money($campaign->current_amount) }} {{ $campaign->currency }}
                                                 /
-                                                {{ $money($c->goal_amount) }} {{ $c->currency }}
+                                                {{ $money($campaign->goal_amount) }} {{ $campaign->currency }}
                                             </span>
                                         </div>
                                     </div>
@@ -249,7 +247,6 @@
         </div>
     </section>
 
-    {{-- TRUST / WHY --}}
     <section class="mt-12">
         <div class="flex items-end justify-between gap-6">
             <div>
@@ -290,7 +287,6 @@
         </div>
     </section>
 
-    {{-- HOW IT WORKS --}}
     <section class="mt-12">
         <div class="card p-6 sm:p-8">
             <div class="flex items-end justify-between gap-6">
@@ -302,26 +298,26 @@
                         {{ $isEn ? 'A simple flow designed for clarity.' : 'مسار بسيط مصمم للوضوح.' }}
                     </p>
                 </div>
+
                 <a href="{{ $urlDonate }}" class="hidden sm:inline-flex btn btn-secondary px-4 py-2.5">
                     {{ $isEn ? 'Start donating' : 'ابدأ التبرع' }}
                 </a>
             </div>
 
             <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                @foreach ($steps as $i => $s)
+                @foreach ($steps as $index => $step)
                     <div class="card-muted p-6">
                         <div class="text-xs font-black text-brand">
-                            {{ $isEn ? 'STEP' : 'الخطوة' }} {{ $i + 1 }}
+                            {{ $isEn ? 'STEP' : 'الخطوة' }} {{ $index + 1 }}
                         </div>
-                        <div class="mt-2 text-lg font-black text-text">{{ $s['t'] }}</div>
-                        <div class="mt-2 text-sm text-subtext leading-relaxed">{{ $s['d'] }}</div>
+                        <div class="mt-2 text-lg font-black text-text">{{ $step['title'] }}</div>
+                        <div class="mt-2 text-sm text-subtext leading-relaxed">{{ $step['desc'] }}</div>
                     </div>
                 @endforeach
             </div>
         </div>
     </section>
 
-    {{-- LATEST REPORTS --}}
     <section class="mt-12">
         <div class="flex items-end justify-between gap-6">
             <div>
@@ -339,23 +335,31 @@
         </div>
 
         <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-            @forelse(($latestReports ?? collect()) as $r)
+            @forelse(($latestReports ?? collect()) as $report)
                 @php
-                    $title = $isEn ? ($r->title_en ?: $r->title_ar) : ($r->title_ar ?: $r->title_en);
-                    $summary = $isEn ? ($r->summary_en ?: $r->summary_ar) : ($r->summary_ar ?: $r->summary_en);
-                    $period = trim(($r->period_month ?? '') . '/' . ($r->period_year ?? ''));
-                    $camp = $r->campaign ?? null;
-                    $campTitle = $camp
+                    $title = $isEn
+                        ? ($report->title_en ?:
+                        $report->title_ar)
+                        : ($report->title_ar ?:
+                        $report->title_en);
+                    $summary = $isEn
+                        ? ($report->summary_en ?:
+                        $report->summary_ar)
+                        : ($report->summary_ar ?:
+                        $report->summary_en);
+                    $period = trim(($report->period_month ?? '') . '/' . ($report->period_year ?? ''));
+
+                    $campaign = $report->campaign ?? null;
+                    $campaignTitleForReport = $campaign
                         ? ($isEn
-                            ? ($camp->title_en ?:
-                            $camp->title_ar)
-                            : ($camp->title_ar ?:
-                            $camp->title_en))
+                            ? ($campaign->title_en ?:
+                            $campaign->title_ar)
+                            : ($campaign->title_ar ?:
+                            $campaign->title_en))
                         : null;
                 @endphp
 
-                <a href="{{ url($base . '/transparency/reports/' . $r->id) }}"
-                    class="card p-6 hover:bg-muted transition">
+                <a href="{{ $reportUrl($report) }}" class="card p-6 hover:bg-muted transition">
                     <div class="text-xs text-subtext">{{ $period ?: ($isEn ? 'Report' : 'تقرير') }}</div>
                     <div class="mt-2 font-black text-text line-clamp-2">{{ $title }}</div>
                     <div class="text-sm text-subtext mt-2 line-clamp-3">
@@ -368,8 +372,8 @@
                             {{ $isEn ? 'Public' : 'عام' }}
                         </span>
 
-                        @if ($campTitle)
-                            <span class="font-black text-subtext line-clamp-1">{{ $campTitle }}</span>
+                        @if ($campaignTitleForReport)
+                            <span class="font-black text-subtext line-clamp-1">{{ $campaignTitleForReport }}</span>
                         @endif
                     </div>
                 </a>
@@ -392,7 +396,6 @@
         </div>
     </section>
 
-    {{-- FINAL CTA --}}
     <section class="mt-12">
         <div
             class="relative overflow-hidden rounded-[28px] border border-border bg-gradient-to-b from-muted to-bg p-8 sm:p-10">

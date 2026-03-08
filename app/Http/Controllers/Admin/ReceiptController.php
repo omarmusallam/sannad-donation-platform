@@ -13,8 +13,9 @@ class ReceiptController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:receipts.view')->only(['index', 'download']);
-        $this->middleware('permission:receipts.create')->only(['regenerate']);
+        // ✅ حدد guard admin لمنع أي تعارض لاحقاً مع donor permissions
+        $this->middleware('permission:receipts.view,admin')->only(['index', 'download']);
+        $this->middleware('permission:receipts.create,admin')->only(['regenerate']);
     }
 
     public function index(Request $request)
@@ -25,7 +26,12 @@ class ReceiptController extends Controller
             'currency' => ['nullable', 'string', 'max:10'],
         ]);
 
-        $query = Receipt::query()->with('donation');
+        $query = Receipt::query()
+            ->with([
+                'donation:id,campaign_id,donor_id,donor_name,donor_email,is_anonymous,amount,currency,status,paid_at',
+                'donation.campaign:id,title_ar,title_en,slug',
+                // 'donation.donor:id,name,email', // اختياري للعرض الإداري
+            ]);
 
         if (!empty($validated['search'])) {
             $search = trim($validated['search']);
@@ -56,9 +62,8 @@ class ReceiptController extends Controller
     {
         $disk = Storage::disk('public');
 
-        if (!$receipt->pdf_path || !$disk->exists($receipt->pdf_path)) {
-            abort(404);
-        }
+        abort_unless(!empty($receipt->pdf_path), 404);
+        abort_unless($disk->exists($receipt->pdf_path), 404);
 
         $filename = $receipt->receipt_no
             ? "receipt-{$receipt->receipt_no}.pdf"
@@ -70,14 +75,20 @@ class ReceiptController extends Controller
     public function regenerate(Receipt $receipt, ReceiptPdfService $pdfService)
     {
         DB::transaction(function () use ($receipt, $pdfService) {
+
+            // تأكد من وجود donation لأن pdf غالباً يعتمد عليه
+            $receipt->loadMissing('donation.campaign');
+
             $oldPath = $receipt->pdf_path;
 
-            // يبني ويحفظ ملف جديد
             $newPath = $pdfService->buildAndStore($receipt);
 
-            $receipt->update(['pdf_path' => $newPath]);
+            $receipt->update([
+                'pdf_path' => $newPath,
+                // اختياري: تحديث وقت الإصدار عند إعادة التوليد
+                // 'issued_at' => now(),
+            ]);
 
-            // احذف القديم بعد نجاح التحديث
             if ($oldPath && $oldPath !== $newPath) {
                 Storage::disk('public')->delete($oldPath);
             }

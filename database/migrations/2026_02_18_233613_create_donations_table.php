@@ -19,6 +19,9 @@ return new class extends Migration {
 
             // المبلغ
             $table->decimal('amount', 14, 2);
+            $table->decimal('fees', 14, 2)->default(0);
+            $table->decimal('net_amount', 14, 2)->nullable();
+
             $table->string('currency', 3)->default('USD');
 
             // الدفع (الآن Mock / لاحقًا Gateway)
@@ -26,13 +29,16 @@ return new class extends Migration {
             $table->enum('status', ['pending', 'paid', 'failed', 'refunded'])->default('pending');
 
             // مرجع خارجي (بوابة دفع لاحقًا)
-            $table->string('provider')->nullable();      // stripe / paytabs...
-            $table->string('provider_ref')->nullable();  // payment_intent_id / transaction_id
+            $table->string('provider')->nullable();
+            $table->string('provider_ref')->nullable();
 
             $table->timestamp('paid_at')->nullable();
+            $table->timestamp('refunded_at')->nullable();
+
             $table->timestamps();
 
             $table->index(['campaign_id', 'status']);
+            $table->index('paid_at');
         });
     }
 

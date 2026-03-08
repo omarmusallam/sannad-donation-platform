@@ -22,21 +22,26 @@ class AppServiceProvider extends ServiceProvider
         // Observers
         Donation::observe(DonationObserver::class);
         Page::observe(PageObserver::class);
-        /**
-         * Public Views Shared Data
-         * - Settings (cached via SettingsService internally or here)
-         * - Public pages list (for footer/nav)
-         */
-        View::composer('public.*', function ($view) {
-            // Settings (safe fallback)
+
+        /*
+        |--------------------------------------------------------------------------
+        | Shared data for user-facing views
+        |--------------------------------------------------------------------------
+        |
+        | public.*  => public pages
+        | donor.*   => donor auth/dashboard pages
+        | layouts.public => in case layout is rendered directly
+        |
+        */
+        View::composer(['public.*', 'donor.*', 'layouts.public'], function ($view) {
             $settings = [];
+
             try {
                 $settings = app(\App\Services\SettingsService::class)->all();
             } catch (\Throwable $e) {
                 $settings = [];
             }
 
-            // Pages list (cached)
             $pages = Cache::remember('public_pages_list', now()->addHours(6), function () {
                 return Page::query()
                     ->where('is_public', true)
@@ -51,12 +56,14 @@ class AppServiceProvider extends ServiceProvider
             ]);
         });
 
-        /**
-         * Admin Views Shared Data (optional)
-         * If you want settings available in admin layouts too:
-         */
+        /*
+        |--------------------------------------------------------------------------
+        | Shared data for admin views
+        |--------------------------------------------------------------------------
+        */
         View::composer('admin.*', function ($view) {
             $settings = [];
+
             try {
                 $settings = app(\App\Services\SettingsService::class)->all();
             } catch (\Throwable $e) {

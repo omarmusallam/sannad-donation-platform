@@ -134,3 +134,41 @@
         scrollbar-color: rgba(100, 116, 139, 0.6) transparent;
     }
 }
+
+@layer components {
+    .card-soft {
+        @apply rounded-3xl border border-border bg-surface shadow-sm;
+    }
+
+    .section-title {
+        @apply text-xl sm:text-2xl font-black tracking-tight text-text;
+    }
+
+    .section-subtitle {
+        @apply mt-1 text-sm text-subtext leading-relaxed;
+    }
+
+    .stat-card {
+        @apply rounded-3xl border border-border bg-surface p-5 sm:p-6;
+    }
+
+    .stat-label {
+        @apply text-sm font-semibold text-subtext;
+    }
+
+    .stat-value {
+        @apply mt-3 text-3xl font-black text-text;
+    }
+
+    .account-shell {
+        @apply grid grid-cols-1 xl:grid-cols-4 gap-6;
+    }
+
+    .account-sidebar {
+        @apply xl:col-span-1 space-y-4;
+    }
+
+    .account-main {
+        @apply xl:col-span-3 space-y-6;
+    }
+}

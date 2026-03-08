@@ -50,22 +50,37 @@ class DonateController extends Controller
         $data['is_anonymous'] = $request->boolean('is_anonymous');
 
         $campaign = Campaign::findOrFail($data['campaign_id']);
-        $data['currency'] = $campaign->currency;
+
+        // ✅ لا تستبدل العملة المختارة بعملة الحملة
+        // $data['currency'] = $campaign->currency;
+
+        $donor = auth('donor')->user();
 
         if ($data['is_anonymous']) {
             $data['donor_name'] = null;
             $data['donor_email'] = null;
+        } else {
+            $data['donor_name'] = $data['donor_name'] ?: ($donor?->name);
+            $data['donor_email'] = $data['donor_email'] ?: ($donor?->email);
         }
 
-        // 1️⃣ Create donation
         $donation = Donation::create([
-            ...$data,
+            'campaign_id' => $data['campaign_id'],
+            'donor_id' => $donor?->id,
+            'donor_name' => $data['donor_name'],
+            'donor_email' => $data['donor_email'],
+            'is_anonymous' => $data['is_anonymous'],
+
+            'amount' => $data['amount'],
+            'fees' => 0,
+            'net_amount' => $data['amount'],
+            'currency' => $data['currency'], // ✅ احفظ العملة المختارة
+
             'payment_method' => 'mock',
             'status' => 'paid',
             'paid_at' => now(),
         ]);
 
-        // 2️⃣ Create receipt record
         $receipt = Receipt::create([
             'uuid' => (string) Str::uuid(),
             'receipt_no' => 'RC-' . now()->format('Ymd') . '-' . str_pad($donation->id, 6, '0', STR_PAD_LEFT),
@@ -78,21 +93,11 @@ class DonateController extends Controller
             'issued_at' => now(),
         ]);
 
-        // 3️⃣ Generate PDF
         $pdfPath = $pdfService->buildAndStore($receipt);
         $receipt->update(['pdf_path' => $pdfPath]);
 
-        $base = app()->getLocale() === 'en' ? '/en' : '';
-
-        return redirect()->to(url($base . '/donate/success?d=' . $donation->id));
+        return redirect()->to(locale_route('donate.success', ['d' => $donation->id]));
     }
-
-    // public function success(Request $request)
-    // {
-    //     $donation = Donation::with('campaign')->findOrFail($request->get('d'));
-    //     return view('public.donate_success', compact('donation'));
-    // }
-
     public function success(Request $request)
     {
         $donation = Donation::with('campaign')->findOrFail($request->get('d'));
