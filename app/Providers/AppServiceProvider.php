@@ -5,10 +5,14 @@ namespace App\Providers;
 use App\Models\Donation;
 use App\Models\Page;
 use App\Observers\DonationObserver;
+use App\Observers\PageObserver;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
-use App\Observers\PageObserver;
+use Illuminate\Support\Str;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,20 +23,9 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // Observers
         Donation::observe(DonationObserver::class);
         Page::observe(PageObserver::class);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Shared data for user-facing views
-        |--------------------------------------------------------------------------
-        |
-        | public.*  => public pages
-        | donor.*   => donor auth/dashboard pages
-        | layouts.public => in case layout is rendered directly
-        |
-        */
         View::composer(['public.*', 'donor.*', 'layouts.public'], function ($view) {
             $settings = [];
 
@@ -56,11 +49,6 @@ class AppServiceProvider extends ServiceProvider
             ]);
         });
 
-        /*
-        |--------------------------------------------------------------------------
-        | Shared data for admin views
-        |--------------------------------------------------------------------------
-        */
         View::composer('admin.*', function ($view) {
             $settings = [];
 
@@ -71,6 +59,15 @@ class AppServiceProvider extends ServiceProvider
             }
 
             $view->with('appSettings', $settings);
+        });
+
+        RateLimiter::for('donor-register', function (Request $request) {
+            $email = Str::lower(trim((string) $request->input('email')));
+
+            return [
+                Limit::perMinute(5)->by($request->ip()),
+                Limit::perMinute(3)->by(($email !== '' ? $email : 'guest') . '|' . $request->ip()),
+            ];
         });
     }
 }

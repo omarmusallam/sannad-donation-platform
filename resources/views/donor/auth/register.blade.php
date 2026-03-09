@@ -15,6 +15,13 @@
 
         $googleLoginUrl = locale_route('donor.social.redirect', ['provider' => 'google']);
         $facebookLoginUrl = locale_route('donor.social.redirect', ['provider' => 'facebook']);
+
+        $nameError = $errors->has('name');
+        $emailError = $errors->has('email');
+        $passwordError = $errors->has('password');
+        $passwordConfirmationError = $errors->has('password_confirmation');
+
+        $formErrors = collect($errors->all())->unique()->values();
     @endphp
 
     <div class="max-w-5xl mx-auto">
@@ -39,14 +46,14 @@
 
                     <p class="mt-2 text-subtext leading-relaxed max-w-2xl">
                         {{ $isEn
-                            ? 'A donor account lets you track donations, download receipts, and donate faster next time.'
-                            : 'حساب المتبرع يتيح لك تتبع التبرعات، تحميل الإيصالات، والتبرع بسرعة لاحقاً.' }}
+                            ? 'A donor account helps you track donations, download receipts, and donate faster next time.'
+                            : 'حساب المتبرع يساعدك على تتبع التبرعات، تحميل الإيصالات، والتبرع بسرعة في المرات القادمة.' }}
                     </p>
 
                     <div class="mt-5 flex flex-wrap gap-2">
                         <span class="badge">{{ $isEn ? 'Donation history' : 'سجل التبرعات' }}</span>
                         <span class="badge">{{ $isEn ? 'Receipts' : 'الإيصالات' }}</span>
-                        <span class="badge">{{ $isEn ? 'Privacy controls' : 'خصوصية' }}</span>
+                        <span class="badge">{{ $isEn ? 'Privacy controls' : 'الخصوصية' }}</span>
                     </div>
                 </div>
 
@@ -54,8 +61,8 @@
                     <div class="font-black text-text mb-2">{{ $isEn ? 'Note' : 'تنبيه' }}</div>
                     <div class="text-subtext leading-relaxed">
                         {{ $isEn
-                            ? 'We use your email to link receipts and confirmations. You can still donate anonymously anytime.'
-                            : 'نستخدم البريد لربط الإيصالات والتأكيدات. ويمكنك التبرع كمجهول في أي وقت.' }}
+                            ? 'We use your email to connect your receipts and confirmations. You can still donate anonymously at any time.'
+                            : 'نستخدم بريدك الإلكتروني لربط الإيصالات ورسائل التأكيد. ويمكنك التبرع كمجهول في أي وقت.' }}
                     </div>
                 </div>
             </div>
@@ -78,6 +85,20 @@
                     </div>
                 @endif
 
+                @if ($formErrors->isNotEmpty() && !$errors->has('social'))
+                    <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3">
+                        <div class="text-sm font-black text-red-800">
+                            {{ $isEn ? 'Please review the highlighted fields.' : 'يرجى مراجعة الحقول المظللة بالأخطاء.' }}
+                        </div>
+
+                        <ul class="mt-2 space-y-1 text-sm text-red-700 list-disc ps-5">
+                            @foreach ($formErrors as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <a href="{{ $googleLoginUrl }}"
                         class="inline-flex items-center justify-center gap-3 rounded-2xl border border-border bg-white px-4 py-3 text-sm font-bold text-slate-800 transition hover:bg-slate-50 shadow-sm">
@@ -91,7 +112,7 @@
                             <path fill="#FBBC05"
                                 d="M12 6.5c1.3 0 2.4.4 3.3 1.3l2.5-2.5C16.5 3.9 14.4 3 12 3 8.4 3 5.4 5.2 3.9 8.2l2.9 2.2C7.5 8.2 9.6 6.5 12 6.5z" />
                         </svg>
-                        <span>{{ $isEn ? 'Google' : 'Google' }}</span>
+                        <span>{{ $isEn ? 'Continue with Google' : 'المتابعة عبر Google' }}</span>
                     </a>
 
                     <a href="{{ $facebookLoginUrl }}"
@@ -102,7 +123,7 @@
                             <path
                                 d="M22 12a10 10 0 1 0-11.6 9.9v-7h-2.1V12h2.1V9.8c0-2.1 1.2-3.3 3.2-3.3.9 0 1.9.2 1.9.2v2.1h-1.1c-1.1 0-1.5.7-1.5 1.4V12h2.5l-.4 2.9h-2.1v7A10 10 0 0 0 22 12z" />
                         </svg>
-                        <span>{{ $isEn ? 'Facebook' : 'Facebook' }}</span>
+                        <span>{{ $isEn ? 'Continue with Facebook' : 'المتابعة عبر Facebook' }}</span>
                     </a>
                 </div>
 
@@ -111,53 +132,93 @@
                         <div class="w-full border-t border-border"></div>
                     </div>
                     <div class="relative flex justify-center text-xs">
-                        <span
-                            class="bg-surface px-3 text-subtext">{{ $isEn ? 'or create with email' : 'أو أنشئ الحساب بالبريد' }}</span>
+                        <span class="bg-surface px-3 text-subtext">
+                            {{ $isEn ? 'or create with email' : 'أو أنشئ الحساب بالبريد الإلكتروني' }}
+                        </span>
                     </div>
                 </div>
 
-                <form method="POST" action="{{ $urlRegisterSubmit }}" class="space-y-5">
+                <form method="POST" action="{{ $urlRegisterSubmit }}" class="space-y-5" novalidate>
                     @csrf
 
                     <div>
-                        <label class="block text-sm font-black mb-2 text-text">
+                        <label for="name" class="block text-sm font-black mb-2 text-text">
                             {{ $isEn ? 'Name (optional)' : 'الاسم (اختياري)' }}
                         </label>
-                        <input type="text" name="name" value="{{ old('name') }}" class="input"
-                            autocomplete="name">
+
+                        <input id="name" type="text" name="name" value="{{ old('name') }}" maxlength="120"
+                            autocomplete="name" placeholder="{{ $isEn ? 'Your full name' : 'اسمك الكامل' }}"
+                            class="input {{ $nameError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : '' }}"
+                            aria-invalid="{{ $nameError ? 'true' : 'false' }}"
+                            @if ($nameError) aria-describedby="name-error" @endif>
+
                         @error('name')
-                            <div class="text-red-600 text-xs mt-2">{{ $message }}</div>
+                            <div id="name-error" class="text-red-600 text-xs mt-2">{{ $message }}</div>
                         @enderror
                     </div>
 
                     <div>
-                        <label class="block text-sm font-black mb-2 text-text">
+                        <label for="email" class="block text-sm font-black mb-2 text-text">
                             {{ $isEn ? 'Email' : 'البريد الإلكتروني' }}
                         </label>
-                        <input type="email" name="email" value="{{ old('email') }}" class="input"
-                            autocomplete="email" inputmode="email" required>
+
+                        <input id="email" type="email" name="email" value="{{ old('email') }}" maxlength="255"
+                            autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" dir="ltr"
+                            placeholder="name@example.com" required
+                            class="input {{ $emailError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : '' }}"
+                            aria-invalid="{{ $emailError ? 'true' : 'false' }}"
+                            @if ($emailError) aria-describedby="email-error" @endif>
+
                         @error('email')
-                            <div class="text-red-600 text-xs mt-2">{{ $message }}</div>
+                            <div id="email-error" class="text-red-600 text-xs mt-2">{{ $message }}</div>
                         @enderror
+                    </div>
+
+                    <div class="rounded-2xl border border-border bg-muted/40 p-4 text-sm">
+                        <div class="font-black text-text mb-1">
+                            {{ $isEn ? 'Password requirements' : 'متطلبات كلمة المرور' }}
+                        </div>
+                        <div class="text-subtext leading-relaxed">
+                            {{ $isEn
+                                ? 'Use at least 10 characters, including uppercase and lowercase letters, at least one number, and at least one symbol.'
+                                : 'استخدم 10 أحرف على الأقل، مع حرف كبير وحرف صغير ورقم واحد على الأقل ورمز واحد على الأقل.' }}
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-black mb-2 text-text">
+                            <label for="password" class="block text-sm font-black mb-2 text-text">
                                 {{ $isEn ? 'Password' : 'كلمة المرور' }}
                             </label>
-                            <input type="password" name="password" class="input" autocomplete="new-password" required>
+
+                            <input id="password" type="password" name="password" minlength="10" autocomplete="new-password"
+                                dir="ltr"
+                                placeholder="{{ $isEn ? 'Create a strong password' : 'أنشئ كلمة مرور قوية' }}" required
+                                class="input {{ $passwordError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : '' }}"
+                                aria-invalid="{{ $passwordError ? 'true' : 'false' }}"
+                                @if ($passwordError) aria-describedby="password-error" @endif>
+
                             @error('password')
-                                <div class="text-red-600 text-xs mt-2">{{ $message }}</div>
+                                <div id="password-error" class="text-red-600 text-xs mt-2">{{ $message }}</div>
                             @enderror
                         </div>
 
                         <div>
-                            <label class="block text-sm font-black mb-2 text-text">
+                            <label for="password_confirmation" class="block text-sm font-black mb-2 text-text">
                                 {{ $isEn ? 'Confirm password' : 'تأكيد كلمة المرور' }}
                             </label>
-                            <input type="password" name="password_confirmation" class="input" autocomplete="new-password"
-                                required>
+
+                            <input id="password_confirmation" type="password" name="password_confirmation"
+                                minlength="10" autocomplete="new-password" dir="ltr"
+                                placeholder="{{ $isEn ? 'Re-enter your password' : 'أعد إدخال كلمة المرور' }}" required
+                                class="input {{ $passwordConfirmationError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : '' }}"
+                                aria-invalid="{{ $passwordConfirmationError ? 'true' : 'false' }}"
+                                @if ($passwordConfirmationError) aria-describedby="password-confirmation-error" @endif>
+
+                            @error('password_confirmation')
+                                <div id="password-confirmation-error" class="text-red-600 text-xs mt-2">{{ $message }}
+                                </div>
+                            @enderror
                         </div>
                     </div>
 
@@ -165,14 +226,14 @@
                         <div class="font-black text-text mb-1">{{ $isEn ? 'Privacy' : 'الخصوصية' }}</div>
                         <div class="text-subtext leading-relaxed">
                             {{ $isEn
-                                ? 'You can donate anonymously anytime from the donation page.'
+                                ? 'You can still donate anonymously at any time from the donation page.'
                                 : 'يمكنك التبرع كمجهول في أي وقت من صفحة التبرع.' }}
                         </div>
                     </div>
 
                     <button class="w-full btn btn-primary" type="submit">
                         {{ $isEn ? 'Create account' : 'إنشاء حساب' }}
-                        <span aria-hidden="true">→</span>
+                        <span aria-hidden="true">{{ $isEn ? '→' : '←' }}</span>
                     </button>
                 </form>
 
@@ -187,28 +248,32 @@
             <aside class="h-fit">
                 <div class="card p-6 sm:p-8 space-y-4">
                     <div class="text-sm text-subtext font-semibold">
-                        {{ $isEn ? 'Why create an account?' : 'لماذا حساب؟' }}
+                        {{ $isEn ? 'Why create an account?' : 'لماذا إنشاء حساب؟' }}
                     </div>
 
                     <div class="space-y-3 text-sm">
                         <div class="card-muted p-4">
                             <div class="font-black text-text">{{ $isEn ? 'Track donations' : 'تتبع التبرعات' }}</div>
                             <div class="text-subtext mt-1">
-                                {{ $isEn ? 'See your full donation history in one place.' : 'اعرض سجل تبرعاتك في مكان واحد.' }}
+                                {{ $isEn ? 'See your full donation history in one place.' : 'اعرض سجل تبرعاتك الكامل في مكان واحد.' }}
                             </div>
                         </div>
 
                         <div class="card-muted p-4">
                             <div class="font-black text-text">{{ $isEn ? 'Download receipts' : 'تحميل الإيصالات' }}</div>
                             <div class="text-subtext mt-1">
-                                {{ $isEn ? 'Access your receipt PDFs quickly.' : 'الوصول لإيصالات PDF بسهولة.' }}
+                                {{ $isEn
+                                    ? 'Access your receipt PDFs quickly whenever you need them.'
+                                    : 'الوصول إلى ملفات الإيصالات PDF بسهولة عند الحاجة.' }}
                             </div>
                         </div>
 
                         <div class="card-muted p-4">
                             <div class="font-black text-text">{{ $isEn ? 'Faster donations' : 'تبرع أسرع' }}</div>
                             <div class="text-subtext mt-1">
-                                {{ $isEn ? 'Auto-fill details next time you donate.' : 'تعبئة بياناتك تلقائياً في التبرعات القادمة.' }}
+                                {{ $isEn
+                                    ? 'Use your saved account details for a smoother donation flow next time.'
+                                    : 'استخدم بياناتك المحفوظة لتجربة تبرع أسرع وأسهل في المرات القادمة.' }}
                             </div>
                         </div>
                     </div>
@@ -220,7 +285,9 @@
                     <div class="card-muted p-4 text-sm">
                         <div class="font-black text-text mb-1">{{ $siteName }}</div>
                         <div class="text-subtext leading-relaxed">
-                            {{ $isEn ? 'You stay in control: donate with your name or anonymously.' : 'أنت المتحكم: تبرع باسمك أو كمجهول.' }}
+                            {{ $isEn
+                                ? 'You stay in control: donate with your name or anonymously.'
+                                : 'أنت المتحكم: يمكنك التبرع باسمك أو كمجهول.' }}
                         </div>
                     </div>
                 </div>

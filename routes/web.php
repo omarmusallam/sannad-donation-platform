@@ -65,8 +65,10 @@ $userFacingRoutes = function () {
         Route::post('/login', [DonorAuthenticatedSessionController::class, 'store'])->name('donor.login.store');
 
         Route::get('/register', [RegisteredUserController::class, 'create'])->name('donor.register');
-        Route::post('/register', [RegisteredUserController::class, 'store'])->name('donor.register.store');
-
+        Route::post('/register', [RegisteredUserController::class, 'store'])
+            ->middleware('throttle:donor-register')
+            ->name('donor.register.store');
+            
         Route::get('/auth/{provider}/redirect', [SocialAuthController::class, 'redirect'])
             ->whereIn('provider', ['google', 'facebook'])
             ->name('donor.social.redirect');

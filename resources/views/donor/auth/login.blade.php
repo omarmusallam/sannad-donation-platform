@@ -15,6 +15,11 @@
 
         $googleLoginUrl = locale_route('donor.social.redirect', ['provider' => 'google']);
         $facebookLoginUrl = locale_route('donor.social.redirect', ['provider' => 'facebook']);
+
+        $emailError = $errors->has('email');
+        $passwordError = $errors->has('password');
+
+        $formErrors = collect($errors->all())->unique()->values();
     @endphp
 
     <div class="max-w-5xl mx-auto">
@@ -28,7 +33,9 @@
                             {{ $isEn ? 'Home' : 'الرئيسية' }}
                         </a>
                         <span class="mx-2">/</span>
-                        <span class="text-text font-semibold">{{ $isEn ? 'Donor login' : 'دخول المتبرع' }}</span>
+                        <span class="text-text font-semibold">
+                            {{ $isEn ? 'Donor login' : 'دخول المتبرع' }}
+                        </span>
                     </div>
 
                     <h1 class="mt-3 text-3xl sm:text-4xl font-black tracking-tight text-text">
@@ -76,6 +83,20 @@
                     </div>
                 @endif
 
+                @if ($formErrors->isNotEmpty() && !$errors->has('social'))
+                    <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3">
+                        <div class="text-sm font-black text-red-800">
+                            {{ $isEn ? 'Please review the highlighted fields.' : 'يرجى مراجعة الحقول المظللة بالأخطاء.' }}
+                        </div>
+
+                        <ul class="mt-2 space-y-1 text-sm text-red-700 list-disc ps-5">
+                            @foreach ($formErrors as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <a href="{{ $googleLoginUrl }}"
                         class="inline-flex items-center justify-center gap-3 rounded-2xl border border-border bg-white px-4 py-3 text-sm font-bold text-slate-800 transition hover:bg-slate-50 shadow-sm">
@@ -89,7 +110,7 @@
                             <path fill="#FBBC05"
                                 d="M12 6.5c1.3 0 2.4.4 3.3 1.3l2.5-2.5C16.5 3.9 14.4 3 12 3 8.4 3 5.4 5.2 3.9 8.2l2.9 2.2C7.5 8.2 9.6 6.5 12 6.5z" />
                         </svg>
-                        <span>{{ $isEn ? 'Google' : 'Google' }}</span>
+                        <span>{{ $isEn ? 'Continue with Google' : 'المتابعة عبر Google' }}</span>
                     </a>
 
                     <a href="{{ $facebookLoginUrl }}"
@@ -100,7 +121,7 @@
                             <path
                                 d="M22 12a10 10 0 1 0-11.6 9.9v-7h-2.1V12h2.1V9.8c0-2.1 1.2-3.3 3.2-3.3.9 0 1.9.2 1.9.2v2.1h-1.1c-1.1 0-1.5.7-1.5 1.4V12h2.5l-.4 2.9h-2.1v7A10 10 0 0 0 22 12z" />
                         </svg>
-                        <span>{{ $isEn ? 'Facebook' : 'Facebook' }}</span>
+                        <span>{{ $isEn ? 'Continue with Facebook' : 'المتابعة عبر Facebook' }}</span>
                     </a>
                 </div>
 
@@ -109,50 +130,67 @@
                         <div class="w-full border-t border-border"></div>
                     </div>
                     <div class="relative flex justify-center text-xs">
-                        <span
-                            class="bg-surface px-3 text-subtext">{{ $isEn ? 'or continue with email' : 'أو تابع باستخدام البريد' }}</span>
+                        <span class="bg-surface px-3 text-subtext">
+                            {{ $isEn ? 'or continue with email' : 'أو تابع باستخدام البريد' }}
+                        </span>
                     </div>
                 </div>
 
-                <form method="POST" action="{{ $urlLoginSubmit }}" class="space-y-5">
+                <form method="POST" action="{{ $urlLoginSubmit }}" class="space-y-5" novalidate>
                     @csrf
 
                     <div>
-                        <label class="block text-sm font-black mb-2 text-text">
+                        <label for="email" class="block text-sm font-black mb-2 text-text">
                             {{ $isEn ? 'Email' : 'البريد الإلكتروني' }}
                         </label>
-                        <input type="email" name="email" value="{{ old('email') }}" class="input"
-                            autocomplete="email" inputmode="email" required>
+
+                        <input id="email" type="email" name="email" value="{{ old('email') }}" maxlength="255"
+                            autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" dir="ltr"
+                            placeholder="name@example.com" required
+                            class="input {{ $emailError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : '' }}"
+                            aria-invalid="{{ $emailError ? 'true' : 'false' }}"
+                            @if ($emailError) aria-describedby="email-error" @endif>
+
                         @error('email')
-                            <div class="text-red-600 text-xs mt-2">{{ $message }}</div>
+                            <div id="email-error" class="text-red-600 text-xs mt-2">{{ $message }}</div>
                         @enderror
                     </div>
 
                     <div>
-                        <label class="block text-sm font-black mb-2 text-text">
+                        <label for="password" class="block text-sm font-black mb-2 text-text">
                             {{ $isEn ? 'Password' : 'كلمة المرور' }}
                         </label>
-                        <input type="password" name="password" class="input" autocomplete="current-password" required>
+
+                        <input id="password" type="password" name="password" maxlength="128"
+                            autocomplete="current-password" dir="ltr"
+                            placeholder="{{ $isEn ? 'Enter your password' : 'أدخل كلمة المرور' }}" required
+                            class="input {{ $passwordError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : '' }}"
+                            aria-invalid="{{ $passwordError ? 'true' : 'false' }}"
+                            @if ($passwordError) aria-describedby="password-error" @endif>
+
                         @error('password')
-                            <div class="text-red-600 text-xs mt-2">{{ $message }}</div>
+                            <div id="password-error" class="text-red-600 text-xs mt-2">{{ $message }}</div>
                         @enderror
                     </div>
 
                     <div class="flex items-center justify-between gap-3">
-                        <label class="flex items-center gap-2 text-sm">
-                            <input type="checkbox" name="remember" value="1"
+                        <label for="remember" class="flex items-center gap-2 text-sm">
+                            <input id="remember" type="checkbox" name="remember" value="1"
+                                {{ old('remember') ? 'checked' : '' }}
                                 class="h-5 w-5 rounded border-border text-brand focus:ring-2 focus:ring-[rgba(var(--brand),.25)]">
-                            <span class="font-black text-text">{{ $isEn ? 'Remember me' : 'تذكرني' }}</span>
+                            <span class="font-black text-text">
+                                {{ $isEn ? 'Remember me' : 'تذكرني' }}
+                            </span>
                         </label>
 
-                        <span class="text-xs text-subtext">
+                        {{-- <span class="text-xs text-subtext">
                             {{ $isEn ? 'Forgot password? (soon)' : 'نسيت كلمة المرور؟ (قريباً)' }}
-                        </span>
+                        </span> --}}
                     </div>
 
                     <button class="w-full btn btn-primary" type="submit">
                         {{ $isEn ? 'Login' : 'تسجيل الدخول' }}
-                        <span aria-hidden="true">→</span>
+                        <span aria-hidden="true">{{ $isEn ? '→' : '←' }}</span>
                     </button>
                 </form>
 
