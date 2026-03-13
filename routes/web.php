@@ -39,7 +39,6 @@ $userFacingRoutes = function () {
 
     Route::get('/donate', [DonateController::class, 'show'])->name('donate');
     Route::post('/donate', [DonateController::class, 'submit'])->name('donate.submit');
-    Route::get('/donate/success', [DonateController::class, 'success'])->name('donate.success');
 
     Route::get('/transparency', [TransparencyController::class, 'index'])->name('transparency');
 
@@ -55,6 +54,14 @@ $userFacingRoutes = function () {
         ->middleware('signed')
         ->name('receipt.download.public');
 
+    Route::get('/donate/success/{donation}', [DonateController::class, 'success'])
+        ->name('donate.success');
+
+    Route::get('/donate/cancel/{donation}', [DonateController::class, 'cancel'])
+        ->name('donate.cancel');
+
+    Route::get('/donate/crypto/{donation}', [DonateController::class, 'crypto'])
+        ->name('donate.crypto');
     /*
     |--------------------------------------------------------------------------
     | Donor Auth Routes
@@ -68,7 +75,7 @@ $userFacingRoutes = function () {
         Route::post('/register', [RegisteredUserController::class, 'store'])
             ->middleware('throttle:donor-register')
             ->name('donor.register.store');
-            
+
         Route::get('/auth/{provider}/redirect', [SocialAuthController::class, 'redirect'])
             ->whereIn('provider', ['google', 'facebook'])
             ->name('donor.social.redirect');

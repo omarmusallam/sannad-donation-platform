@@ -10,7 +10,7 @@ class Donation extends Model
 {
     protected $fillable = [
         'campaign_id',
-        'donor_id',        // ✅ NEW
+        'donor_id',
         'donor_name',
         'donor_email',
         'is_anonymous',
@@ -20,10 +20,10 @@ class Donation extends Model
         'net_amount',
         'currency',
 
-        'payment_method',
-        'status',
-        'provider',
-        'provider_ref',
+        'payment_method',   // card | usdt_trc20
+        'status',           // pending | paid | failed | refunded
+        'provider',         // stripe | wallet
+        'provider_ref',     // stripe session id or tx reference
 
         'paid_at',
         'refunded_at',

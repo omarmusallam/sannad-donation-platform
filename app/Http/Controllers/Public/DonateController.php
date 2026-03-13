@@ -5,11 +5,9 @@ namespace App\Http\Controllers\Public;
 use App\Http\Controllers\Controller;
 use App\Models\Campaign;
 use App\Models\Donation;
+use App\Models\Receipt;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use App\Models\Receipt;
-use App\Services\ReceiptPdfService;
-use Illuminate\Support\Str;
 
 class DonateController extends Controller
 {
@@ -36,12 +34,13 @@ class DonateController extends Controller
         return view('public.donate', compact('campaign', 'campaigns', 'amount'));
     }
 
-    public function submit(Request $request, ReceiptPdfService $pdfService)
+    public function submit(Request $request)
     {
         $data = $request->validate([
             'campaign_id' => ['required', 'exists:campaigns,id'],
             'amount' => ['required', 'numeric', 'min:1', 'max:100000'],
             'currency' => ['required', 'string', 'size:3', Rule::in(['USD', 'EUR', 'ILS'])],
+            'payment_method' => ['required', Rule::in(['card', 'usdt_trc20'])],
             'donor_name' => ['nullable', 'string', 'max:255'],
             'donor_email' => ['nullable', 'email', 'max:255'],
             'is_anonymous' => ['nullable', 'boolean'],
@@ -49,10 +48,10 @@ class DonateController extends Controller
 
         $data['is_anonymous'] = $request->boolean('is_anonymous');
 
-        $campaign = Campaign::findOrFail($data['campaign_id']);
-
-        // ✅ لا تستبدل العملة المختارة بعملة الحملة
-        // $data['currency'] = $campaign->currency;
+        $campaign = Campaign::query()
+            ->whereKey($data['campaign_id'])
+            ->whereIn('status', ['active', 'paused'])
+            ->firstOrFail();
 
         $donor = auth('donor')->user();
 
@@ -60,12 +59,12 @@ class DonateController extends Controller
             $data['donor_name'] = null;
             $data['donor_email'] = null;
         } else {
-            $data['donor_name'] = $data['donor_name'] ?: ($donor?->name);
-            $data['donor_email'] = $data['donor_email'] ?: ($donor?->email);
+            $data['donor_name'] = $data['donor_name'] ?: $donor?->name;
+            $data['donor_email'] = $data['donor_email'] ?: $donor?->email;
         }
 
         $donation = Donation::create([
-            'campaign_id' => $data['campaign_id'],
+            'campaign_id' => $campaign->id,
             'donor_id' => $donor?->id,
             'donor_name' => $data['donor_name'],
             'donor_email' => $data['donor_email'],
@@ -73,38 +72,32 @@ class DonateController extends Controller
 
             'amount' => $data['amount'],
             'fees' => 0,
-            'net_amount' => $data['amount'],
-            'currency' => $data['currency'], // ✅ احفظ العملة المختارة
+            'net_amount' => null,
+            'currency' => $data['currency'],
 
-            'payment_method' => 'mock',
-            'status' => 'paid',
-            'paid_at' => now(),
+            'payment_method' => $data['payment_method'],
+            'status' => 'pending',
+            'provider' => $data['payment_method'] === 'card' ? 'stripe' : 'wallet',
+            'provider_ref' => null,
+
+            'paid_at' => null,
+            'refunded_at' => null,
         ]);
 
-        $receipt = Receipt::create([
-            'uuid' => (string) Str::uuid(),
-            'receipt_no' => 'RC-' . now()->format('Ymd') . '-' . str_pad($donation->id, 6, '0', STR_PAD_LEFT),
-            'donation_id' => $donation->id,
-            'donor_name' => $donation->donor_name,
-            'donor_email' => $donation->donor_email,
-            'amount' => $donation->amount,
-            'currency' => $donation->currency,
-            'status' => 'issued',
-            'issued_at' => now(),
-        ]);
+        if ($data['payment_method'] === 'usdt_trc20') {
+            return redirect()->to(locale_route('donate.crypto', ['donation' => $donation->id]));
+        }
 
-        $pdfPath = $pdfService->buildAndStore($receipt);
-        $receipt->update(['pdf_path' => $pdfPath]);
-
-        return redirect()->to(locale_route('donate.success', ['d' => $donation->id]));
+        return app(\App\Services\Payments\StripeCheckoutService::class)
+            ->redirectToCheckout($donation);
     }
-    public function success(Request $request)
-    {
-        $donation = Donation::with('campaign')->findOrFail($request->get('d'));
 
-        // Prefer relation if exists, fallback query
+    public function success(Donation $donation)
+    {
+        $donation->loadMissing(['campaign', 'receipt']);
+
         $receipt = $donation->receipt
-            ?? \App\Models\Receipt::where('donation_id', $donation->id)->latest()->first();
+            ?? Receipt::where('donation_id', $donation->id)->latest()->first();
 
         $receiptUrl = $receipt ? route('receipt.verify', $receipt) : null;
 
@@ -112,10 +105,26 @@ class DonateController extends Controller
             ? \URL::temporarySignedRoute(
                 'receipt.download.public',
                 now()->addMinutes(30),
-                ['receipt' => $receipt] // ✅ matches {receipt:uuid}
+                ['receipt' => $receipt]
             )
             : null;
 
         return view('public.donate_success', compact('donation', 'receiptUrl', 'downloadUrl'));
+    }
+
+    public function cancel(Donation $donation)
+    {
+        return redirect()
+            ->to(locale_route('donate', ['campaign' => $donation->campaign->slug ?? null]))
+            ->with('error', app()->isLocale('en')
+                ? 'Payment was canceled.'
+                : 'تم إلغاء عملية الدفع.');
+    }
+
+    public function crypto(Donation $donation)
+    {
+        abort_unless($donation->payment_method === 'usdt_trc20', 404);
+
+        return view('public.donate_crypto', compact('donation'));
     }
 }

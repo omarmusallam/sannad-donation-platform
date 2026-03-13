@@ -52,6 +52,19 @@
             </p>
         </section>
 
+        @if (session('error'))
+            <div class="mb-6 rounded-2xl border border-red-300/30 bg-red-500/10 p-4 text-sm text-red-200 font-semibold">
+                {{ session('error') }}
+            </div>
+        @endif
+
+        @if (session('success'))
+            <div
+                class="mb-6 rounded-2xl border border-green-300/30 bg-green-500/10 p-4 text-sm text-green-200 font-semibold">
+                {{ session('success') }}
+            </div>
+        @endif
+
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             @if (!$donor)
                 <div
@@ -187,9 +200,51 @@
                     <div class="text-red-600 text-xs -mt-3">{{ $message }}</div>
                 @enderror
 
+                <div>
+                    <label class="block text-sm font-black mb-2 text-text">
+                        {{ $isEn ? 'Payment method' : 'طريقة الدفع' }}
+                    </label>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <label class="card-muted p-4 flex items-start gap-3 cursor-pointer">
+                            <input type="radio" name="payment_method" value="card" class="mt-1"
+                                {{ old('payment_method', 'card') === 'card' ? 'checked' : '' }}>
+
+                            <div>
+                                <div class="font-black text-text">
+                                    {{ $isEn ? 'Card / Apple Pay / Google Pay' : 'بطاقة / Apple Pay / Google Pay' }}
+                                </div>
+
+                                <div class="text-sm text-subtext mt-1">
+                                    {{ $isEn ? 'Secure checkout via Stripe' : 'دفع آمن عبر Stripe' }}
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="card-muted p-4 flex items-start gap-3 cursor-pointer">
+                            <input type="radio" name="payment_method" value="usdt_trc20" class="mt-1"
+                                {{ old('payment_method') === 'usdt_trc20' ? 'checked' : '' }}>
+
+                            <div>
+                                <div class="font-black text-text">
+                                    {{ $isEn ? 'USDT (TRC20)' : 'USDT (TRC20)' }}
+                                </div>
+
+                                <div class="text-sm text-subtext mt-1">
+                                    {{ $isEn ? 'Pay from your crypto wallet' : 'ادفع من محفظتك الرقمية' }}
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+
+                    @error('payment_method')
+                        <div class="text-red-600 text-xs mt-2">{{ $message }}</div>
+                    @enderror
+                </div>
+
                 <div class="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between pt-2">
                     <button type="submit" class="w-full sm:w-auto btn btn-primary">
-                        {{ $isEn ? 'Confirm donation' : 'تأكيد التبرع' }}
+                        {{ $isEn ? 'Continue to payment' : 'المتابعة إلى الدفع' }}
                     </button>
 
                     <a class="w-full sm:w-auto btn btn-secondary text-center" href="{{ $urlCampaigns }}">
