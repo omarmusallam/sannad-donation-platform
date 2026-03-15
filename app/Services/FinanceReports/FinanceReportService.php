@@ -9,17 +9,22 @@ class FinanceReportService
 {
     public function kpis($from, $to, ?int $campaignId = null): array
     {
-        $q = Donation::query()->paid()->paidDateBetween($from, $to);
+        $q = Donation::query()
+            ->paid()
+            ->paidDateBetween($from, $to);
 
         if ($campaignId) {
             $q->where('campaign_id', $campaignId);
         }
 
         return [
-            'total_amount'   => (float) $q->sum('amount'),
+            'total_amount' => (float) $q->sum('amount'),
             'donations_count' => (int) $q->count(),
-            'avg_donation'   => (float) $q->avg('amount'),
-            'unique_donors'  => (int) $q->whereNotNull('donor_email')->distinct('donor_email')->count('donor_email'),
+            'avg_donation' => (float) $q->avg('amount'),
+            'unique_donors' => (int) $q
+                ->whereNotNull('donor_email')
+                ->distinct('donor_email')
+                ->count('donor_email'),
         ];
     }
 
@@ -28,7 +33,7 @@ class FinanceReportService
         return Donation::query()
             ->paid()
             ->whereYear(DB::raw('COALESCE(paid_at, created_at)'), $year)
-            ->selectRaw("LPAD(MONTH(COALESCE(paid_at, created_at)),2,'0') as month")
+            ->selectRaw("LPAD(MONTH(COALESCE(paid_at, created_at)), 2, '0') as month")
             ->selectRaw("COUNT(*) as donations_count")
             ->selectRaw("SUM(amount) as total_amount")
             ->groupBy('month')
@@ -41,7 +46,7 @@ class FinanceReportService
         return Donation::query()
             ->paid()
             ->paidDateBetween($from, $to)
-            ->selectRaw("campaign_id, COUNT(*) as donations_count, SUM(amount) as total_amount")
+            ->selectRaw('campaign_id, COUNT(*) as donations_count, SUM(amount) as total_amount')
             ->with('campaign:id,title_ar,title_en,currency')
             ->groupBy('campaign_id')
             ->orderByDesc('total_amount')
@@ -53,8 +58,8 @@ class FinanceReportService
         return Donation::query()
             ->paid()
             ->paidDateBetween($from, $to)
-            ->selectRaw("COALESCE(provider, 'N/A') as provider")
-            ->selectRaw("COUNT(*) as donations_count, SUM(amount) as total_amount")
+            ->selectRaw("COALESCE(NULLIF(provider, ''), 'N/A') as provider")
+            ->selectRaw('COUNT(*) as donations_count, SUM(amount) as total_amount')
             ->groupBy('provider')
             ->orderByDesc('total_amount')
             ->get();
@@ -65,7 +70,8 @@ class FinanceReportService
         return Donation::query()
             ->paid()
             ->paidDateBetween($from, $to)
-            ->selectRaw("currency, COUNT(*) as donations_count, SUM(amount) as total_amount")
+            ->selectRaw("COALESCE(NULLIF(currency, ''), 'N/A') as currency")
+            ->selectRaw('COUNT(*) as donations_count, SUM(amount) as total_amount')
             ->groupBy('currency')
             ->orderByDesc('total_amount')
             ->get();
@@ -75,7 +81,8 @@ class FinanceReportService
     {
         return Donation::query()
             ->paidDateBetween($from, $to)
-            ->selectRaw("status, COUNT(*) as donations_count, SUM(amount) as total_amount")
+            ->selectRaw("COALESCE(NULLIF(status, ''), 'N/A') as status")
+            ->selectRaw('COUNT(*) as donations_count, SUM(amount) as total_amount')
             ->groupBy('status')
             ->orderByDesc('donations_count')
             ->get();
@@ -85,7 +92,8 @@ class FinanceReportService
     {
         return Donation::query()
             ->paidDateBetween($from, $to)
-            ->selectRaw("payment_method, COUNT(*) as donations_count, SUM(amount) as total_amount")
+            ->selectRaw("COALESCE(NULLIF(payment_method, ''), 'N/A') as payment_method")
+            ->selectRaw('COUNT(*) as donations_count, SUM(amount) as total_amount')
             ->groupBy('payment_method')
             ->orderByDesc('donations_count')
             ->get();

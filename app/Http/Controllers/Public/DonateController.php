@@ -127,4 +127,36 @@ class DonateController extends Controller
 
         return view('public.donate_crypto', compact('donation'));
     }
+
+    public function submitCryptoTransfer(Request $request, Donation $donation)
+    {
+        abort_unless($donation->payment_method === 'usdt_trc20', 404);
+        abort_unless($donation->status === 'pending', 404);
+
+        $data = $request->validate([
+            'crypto_tx_hash' => ['required', 'string', 'min:20', 'max:255'],
+            'crypto_sender_wallet' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $wallet = config('services.crypto.usdt_trc20_wallet');
+
+        $donation->update([
+            'provider' => 'wallet',
+            'crypto_network' => 'trc20',
+            'crypto_wallet_address' => $wallet,
+            'crypto_tx_hash' => trim($data['crypto_tx_hash']),
+            'crypto_sender_wallet' => trim((string) ($data['crypto_sender_wallet'] ?? '')) ?: null,
+            'crypto_submitted_at' => now(),
+            'status' => 'pending_crypto_review',
+        ]);
+
+        return redirect()->to(locale_route('donate.crypto.pending', ['donation' => $donation->id]));
+    }
+
+    public function cryptoPending(Donation $donation)
+    {
+        abort_unless($donation->payment_method === 'usdt_trc20', 404);
+
+        return view('public.donate_crypto_pending', compact('donation'));
+    }
 }

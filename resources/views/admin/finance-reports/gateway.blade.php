@@ -8,16 +8,30 @@
 @section('page_title', app()->isLocale('ar') ? 'تقرير بوابة الدفع' : 'Gateway Report')
 
 @section('content')
-    @php($isAr = app()->isLocale('ar'))
+    @php
+        $isAr = app()->isLocale('ar');
+
+        $providerLabel = function ($provider) use ($isAr) {
+            return match ($provider) {
+                'stripe' => $isAr ? 'Stripe' : 'Stripe',
+                'wallet' => $isAr ? 'محفظة / كريبتو' : 'Wallet / Crypto',
+                null, '' => $isAr ? 'غير محدد' : 'Unspecified',
+                default => $provider,
+            };
+        };
+    @endphp
 
     <div class="space-y-6">
         <div class="bg-white border border-slate-200 rounded-[28px] p-6 shadow-sm">
-            <div class="text-2xl font-extrabold text-slate-900">{{ $isAr ? 'تقرير بوابة الدفع' : 'Gateway Report' }}</div>
-            <div class="text-sm text-slate-600 mt-1">{{ $isAr ? 'تجميع حسب provider.' : 'Grouped by provider.' }}</div>
+            <div class="text-2xl font-extrabold text-slate-900">
+                {{ $isAr ? 'تقرير بوابة الدفع' : 'Gateway Report' }}
+            </div>
+            <div class="text-sm text-slate-600 mt-1">
+                {{ $isAr ? 'تجميع حسب مزود الدفع / بوابة الدفع.' : 'Grouped by payment provider.' }}
+            </div>
         </div>
 
         @include('admin.finance-reports._filter_dates')
-
         @include('admin.finance-reports._kpis', ['kpis' => $kpis])
 
         <div class="rounded-[28px] border border-slate-200 bg-white overflow-hidden shadow-sm">
@@ -37,9 +51,13 @@
                     <tbody>
                         @forelse($rows as $r)
                             <tr class="border-t border-slate-100 hover:bg-slate-50/60 transition">
-                                <td class="px-4 py-3 font-bold text-slate-900">{{ $r->provider }}</td>
+                                <td class="px-4 py-3 font-bold text-slate-900">
+                                    {{ $providerLabel($r->provider) }}
+                                </td>
                                 <td class="px-4 py-3">{{ (int) $r->donations_count }}</td>
-                                <td class="px-4 py-3 font-semibold">{{ number_format((float) $r->total_amount, 2) }}</td>
+                                <td class="px-4 py-3 font-semibold">
+                                    {{ number_format((float) $r->total_amount, 2) }}
+                                </td>
                             </tr>
                         @empty
                             <tr class="border-t border-slate-100">

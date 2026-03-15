@@ -13,7 +13,6 @@ class FinanceReportController extends Controller
 {
     public function __construct(private FinanceReportService $service)
     {
-        // حماية جميع صفحات التقارير المالية
         $this->middleware('permission:finance_reports.view')->only([
             'index',
             'monthly',
@@ -30,12 +29,8 @@ class FinanceReportController extends Controller
         return view('admin.finance-reports.index');
     }
 
-    /**
-     * Range helper (safe + validated)
-     */
     private function range(Request $request): array
     {
-        // Validation خفيف يمنع parse errors
         Validator::make($request->all(), [
             'from' => ['nullable', 'date'],
             'to'   => ['nullable', 'date'],
@@ -49,7 +44,6 @@ class FinanceReportController extends Controller
             ? Carbon::parse($request->input('to'))->endOfDay()
             : now()->endOfDay();
 
-        // ضمان منطقي: from <= to
         if ($from->gt($to)) {
             [$from, $to] = [$to->copy()->startOfDay(), $from->copy()->endOfDay()];
         }
@@ -81,8 +75,6 @@ class FinanceReportController extends Controller
         $campaignId = !empty($validated['campaign_id']) ? (int) $validated['campaign_id'] : null;
 
         $kpis = $this->service->kpis($from, $to, $campaignId);
-
-        // لو تم اختيار حملة، لا نحتاج جدول جميع الحملات
         $rows = $campaignId ? null : $this->service->byCampaign($from, $to);
 
         $campaigns = Campaign::query()

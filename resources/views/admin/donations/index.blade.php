@@ -9,14 +9,25 @@
             return match ($st) {
                 'paid' => ['label' => 'مدفوع', 'cls' => 'bg-emerald-50 text-emerald-700 border-emerald-200'],
                 'pending' => ['label' => 'قيد الانتظار', 'cls' => 'bg-amber-50 text-amber-800 border-amber-200'],
+                'pending_crypto_review' => [
+                    'label' => 'بانتظار مراجعة الكريبتو',
+                    'cls' => 'bg-violet-50 text-violet-700 border-violet-200',
+                ],
                 'failed' => ['label' => 'فشل', 'cls' => 'bg-rose-50 text-rose-700 border-rose-200'],
                 'refunded' => ['label' => 'مسترجع', 'cls' => 'bg-sky-50 text-sky-700 border-sky-200'],
                 default => ['label' => $st ?: '-', 'cls' => 'bg-slate-50 text-slate-700 border-slate-200'],
             };
         };
+
+        $statusOptions = [
+            'pending' => 'قيد الانتظار',
+            'pending_crypto_review' => 'بانتظار مراجعة الكريبتو',
+            'paid' => 'مدفوع',
+            'failed' => 'فشل',
+            'refunded' => 'مسترجع',
+        ];
     @endphp
 
-    {{-- Header --}}
     <div class="flex items-start justify-between gap-4 mb-6">
         <div>
             <h1 class="text-2xl md:text-3xl font-bold text-slate-900">التبرعات</h1>
@@ -24,7 +35,18 @@
         </div>
     </div>
 
-    {{-- Filters --}}
+    @if (session('success'))
+        <div class="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if (session('error'))
+        <div class="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+            {{ session('error') }}
+        </div>
+    @endif
+
     <form class="bg-white border border-slate-200 rounded-[22px] p-4 md:p-5 mb-4 shadow-sm">
         <div class="flex flex-col lg:flex-row lg:items-end gap-3">
             <div class="flex-1">
@@ -37,20 +59,18 @@
                         </svg>
                     </span>
                     <input name="search" value="{{ request('search') }}"
-                        class="w-full rounded-2xl border border-slate-200 bg-white pr-10 pl-4 py-3 text-sm
-                               focus:ring-2 focus:ring-black/10 focus:border-black/30 focus:outline-none transition"
-                        placeholder="بحث بالاسم / الإيميل / ID">
+                        class="w-full rounded-2xl border border-slate-200 bg-white pr-10 pl-4 py-3 text-sm focus:ring-2 focus:ring-black/10 focus:border-black/30 focus:outline-none transition"
+                        placeholder="بحث بالاسم / الإيميل / ID / Tx Hash">
                 </div>
             </div>
 
-            <div class="w-full lg:w-56">
+            <div class="w-full lg:w-64">
                 <label class="block text-xs font-semibold text-slate-600 mb-2">الحالة</label>
                 <select name="status"
-                    class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm
-                           focus:ring-2 focus:ring-black/10 focus:border-black/30 focus:outline-none transition">
+                    class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm focus:ring-2 focus:ring-black/10 focus:border-black/30 focus:outline-none transition">
                     <option value="">كل الحالات</option>
-                    @foreach (['pending', 'paid', 'failed', 'refunded'] as $st)
-                        <option value="{{ $st }}" @selected(request('status') === $st)>{{ $st }}</option>
+                    @foreach ($statusOptions as $value => $label)
+                        <option value="{{ $value }}" @selected(request('status') === $value)>{{ $label }}</option>
                     @endforeach
                 </select>
             </div>
@@ -71,7 +91,6 @@
             </div>
         </div>
 
-        {{-- Active filters hint --}}
         @if (request('search') || request('status'))
             <div class="mt-4 flex flex-wrap items-center gap-2 text-xs">
                 <span class="text-slate-500">الفلاتر الحالية:</span>
@@ -92,7 +111,6 @@
         @endif
     </form>
 
-    {{-- Table Card --}}
     <div class="bg-white border border-slate-200 rounded-[28px] overflow-hidden shadow-sm">
         <div class="p-4 md:p-5 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
             <div class="text-sm text-slate-600">
@@ -112,6 +130,7 @@
                         <th class="p-4 md:p-5 font-semibold text-slate-700">الحملة</th>
                         <th class="p-4 md:p-5 font-semibold text-slate-700">المتبرع</th>
                         <th class="p-4 md:p-5 font-semibold text-slate-700">المبلغ</th>
+                        <th class="p-4 md:p-5 font-semibold text-slate-700">طريقة الدفع</th>
                         <th class="p-4 md:p-5 font-semibold text-slate-700">الحالة</th>
                         <th class="p-4 md:p-5 font-semibold text-slate-700">التاريخ</th>
                         <th class="p-4 md:p-5 font-semibold text-slate-700">عرض</th>
@@ -156,6 +175,13 @@
 
                             <td class="p-4 md:p-5">
                                 <span
+                                    class="inline-flex items-center px-2.5 py-1 rounded-full border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700">
+                                    {{ $d->payment_method ?: '-' }}
+                                </span>
+                            </td>
+
+                            <td class="p-4 md:p-5">
+                                <span
                                     class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold {{ $meta['cls'] }}">
                                     <span class="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
                                     {{ $meta['label'] }}
@@ -184,7 +210,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="p-10">
+                            <td colspan="8" class="p-10">
                                 <div
                                     class="rounded-3xl border border-dashed border-slate-200 bg-slate-50/60 p-8 text-center">
                                     <div
@@ -197,7 +223,7 @@
                                         </svg>
                                     </div>
                                     <div class="mt-4 text-slate-900 font-semibold">لا توجد نتائج</div>
-                                    <div class="mt-1 text-sm text-slate-500">جرّب تعديل الفلاتر أو امسحها لعرض الكل.</div>
+                                    <div class="mt-1 text-sm text-slate-500">جرّب تعديل الفلاتر أو مسحها لعرض الكل.</div>
                                     <div class="mt-5">
                                         <a href="{{ route('admin.donations.index') }}"
                                             class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition">

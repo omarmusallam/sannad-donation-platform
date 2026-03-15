@@ -8,13 +8,26 @@
 @section('page_title', app()->isLocale('ar') ? 'تقرير طرق الدفع' : 'Payment Methods')
 
 @section('content')
-    @php($isAr = app()->isLocale('ar'))
+    @php
+        $isAr = app()->isLocale('ar');
+
+        $paymentMethodLabel = function ($method) use ($isAr) {
+            return match ($method) {
+                'card' => $isAr ? 'بطاقة / Apple Pay / Google Pay' : 'Card / Apple Pay / Google Pay',
+                'usdt_trc20' => $isAr ? 'USDT (TRC20)' : 'USDT (TRC20)',
+                null, '' => $isAr ? 'غير محدد' : 'Unspecified',
+                default => $method,
+            };
+        };
+    @endphp
 
     <div class="space-y-6">
         <div class="bg-white border border-slate-200 rounded-[28px] p-6 shadow-sm">
-            <div class="text-2xl font-extrabold text-slate-900">{{ $isAr ? 'تقرير طرق الدفع' : 'Payment Method Report' }}
+            <div class="text-2xl font-extrabold text-slate-900">
+                {{ $isAr ? 'تقرير طرق الدفع' : 'Payment Method Report' }}
             </div>
-            <div class="text-sm text-slate-600 mt-1">{{ $isAr ? 'تجميع حسب payment_method.' : 'Grouped by payment_method.' }}
+            <div class="text-sm text-slate-600 mt-1">
+                {{ $isAr ? 'تجميع حسب payment_method.' : 'Grouped by payment_method.' }}
             </div>
         </div>
 
@@ -37,9 +50,13 @@
                     <tbody>
                         @forelse($rows as $r)
                             <tr class="border-t border-slate-100 hover:bg-slate-50/60 transition">
-                                <td class="px-4 py-3 font-bold text-slate-900">{{ $r->payment_method }}</td>
+                                <td class="px-4 py-3 font-bold text-slate-900">
+                                    {{ $paymentMethodLabel($r->payment_method) }}
+                                </td>
                                 <td class="px-4 py-3">{{ (int) $r->donations_count }}</td>
-                                <td class="px-4 py-3 font-semibold">{{ number_format((float) $r->total_amount, 2) }}</td>
+                                <td class="px-4 py-3 font-semibold">
+                                    {{ number_format((float) $r->total_amount, 2) }}
+                                </td>
                             </tr>
                         @empty
                             <tr class="border-t border-slate-100">

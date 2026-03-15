@@ -62,6 +62,13 @@ $userFacingRoutes = function () {
 
     Route::get('/donate/crypto/{donation}', [DonateController::class, 'crypto'])
         ->name('donate.crypto');
+
+    Route::post('/donate/crypto/{donation}/submit', [DonateController::class, 'submitCryptoTransfer'])
+        ->name('donate.crypto.submit');
+
+    Route::get('/donate/crypto/{donation}/pending', [DonateController::class, 'cryptoPending'])
+        ->name('donate.crypto.pending');
+
     /*
     |--------------------------------------------------------------------------
     | Donor Auth Routes

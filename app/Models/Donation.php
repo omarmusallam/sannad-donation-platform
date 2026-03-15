@@ -27,6 +27,13 @@ class Donation extends Model
 
         'paid_at',
         'refunded_at',
+
+        'crypto_network',
+        'crypto_wallet_address',
+        'crypto_tx_hash',
+        'crypto_sender_wallet',
+        'crypto_submitted_at',
+        'admin_payment_note',
     ];
 
     protected $casts = [
@@ -36,6 +43,7 @@ class Donation extends Model
         'is_anonymous' => 'boolean',
         'paid_at' => 'datetime',
         'refunded_at' => 'datetime',
+        'crypto_submitted_at' => 'datetime',
     ];
 
     /*

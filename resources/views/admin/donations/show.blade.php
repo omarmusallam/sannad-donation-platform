@@ -9,6 +9,10 @@
             return match ($st) {
                 'paid' => ['label' => 'مدفوع', 'cls' => 'bg-emerald-50 text-emerald-700 border-emerald-200'],
                 'pending' => ['label' => 'قيد الانتظار', 'cls' => 'bg-amber-50 text-amber-800 border-amber-200'],
+                'pending_crypto_review' => [
+                    'label' => 'بانتظار مراجعة الكريبتو',
+                    'cls' => 'bg-violet-50 text-violet-700 border-violet-200',
+                ],
                 'failed' => ['label' => 'فشل', 'cls' => 'bg-rose-50 text-rose-700 border-rose-200'],
                 'refunded' => ['label' => 'مسترجع', 'cls' => 'bg-sky-50 text-sky-700 border-sky-200'],
                 default => ['label' => $st ?: '-', 'cls' => 'bg-slate-50 text-slate-700 border-slate-200'],
@@ -23,10 +27,12 @@
         $receipt = $donation->receipt ?? null;
         $hasReceipt = (bool) $receipt;
         $canGenerateReceiptByStatus = $donation->status === 'paid';
+
+        $isCrypto = $donation->payment_method === 'usdt_trc20';
+        $canReviewCrypto = $isCrypto && in_array($donation->status, ['pending', 'pending_crypto_review'], true);
     @endphp
 
     <div class="mx-auto max-w-6xl">
-        {{-- Header --}}
         <div class="mb-6">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div class="min-w-0">
@@ -57,9 +63,7 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {{-- Main --}}
             <div class="lg:col-span-8 space-y-6">
-                {{-- Donation summary --}}
                 <div class="bg-white border border-slate-200 rounded-[28px] p-5 md:p-6 shadow-sm">
                     <div class="flex flex-col gap-1 mb-5">
                         <div class="text-base font-semibold text-slate-900">بيانات التبرع</div>
@@ -122,7 +126,61 @@
                     </div>
                 </div>
 
-                {{-- Campaign --}}
+                @if ($isCrypto)
+                    <div class="bg-white border border-slate-200 rounded-[28px] p-5 md:p-6 shadow-sm">
+                        <div class="flex items-center justify-between mb-5">
+                            <div>
+                                <div class="text-base font-semibold text-slate-900">بيانات تحويل USDT</div>
+                                <div class="text-xs text-slate-500 mt-1">تفاصيل التحويل المرسل من المتبرع.</div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                            <div class="p-4 rounded-2xl border border-slate-200">
+                                <div class="text-xs text-slate-500">الشبكة</div>
+                                <div class="mt-1 font-semibold text-slate-900">
+                                    {{ strtoupper($donation->crypto_network ?: '-') }}
+                                </div>
+                            </div>
+
+                            <div class="p-4 rounded-2xl border border-slate-200">
+                                <div class="text-xs text-slate-500">وقت إرسال البيانات</div>
+                                <div class="mt-1 font-semibold text-slate-900">
+                                    {{ $donation->crypto_submitted_at?->format('Y-m-d H:i') ?: '-' }}
+                                </div>
+                            </div>
+
+                            <div class="p-4 rounded-2xl border border-slate-200 sm:col-span-2">
+                                <div class="text-xs text-slate-500">عنوان المحفظة المستلمة</div>
+                                <div class="mt-1 font-semibold text-slate-900 font-mono break-all" dir="ltr">
+                                    {{ $donation->crypto_wallet_address ?: '-' }}
+                                </div>
+                            </div>
+
+                            <div class="p-4 rounded-2xl border border-slate-200 sm:col-span-2">
+                                <div class="text-xs text-slate-500">Tx Hash</div>
+                                <div class="mt-1 font-semibold text-slate-900 font-mono break-all" dir="ltr">
+                                    {{ $donation->crypto_tx_hash ?: '-' }}
+                                </div>
+                            </div>
+
+                            <div class="p-4 rounded-2xl border border-slate-200 sm:col-span-2">
+                                <div class="text-xs text-slate-500">المحفظة المرسلة</div>
+                                <div class="mt-1 font-semibold text-slate-900 font-mono break-all" dir="ltr">
+                                    {{ $donation->crypto_sender_wallet ?: '-' }}
+                                </div>
+                            </div>
+
+                            <div class="p-4 rounded-2xl border border-slate-200 sm:col-span-2">
+                                <div class="text-xs text-slate-500">ملاحظة الإدارة</div>
+                                <div class="mt-1 font-semibold text-slate-900 whitespace-pre-line">
+                                    {{ $donation->admin_payment_note ?: '-' }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
                 <div class="bg-white border border-slate-200 rounded-[28px] p-5 md:p-6 shadow-sm">
                     <div class="flex items-center justify-between mb-5">
                         <div>
@@ -151,9 +209,7 @@
                 </div>
             </div>
 
-            {{-- Sidebar --}}
             <div class="lg:col-span-4 space-y-6">
-                {{-- Donor --}}
                 <div class="bg-white border border-slate-200 rounded-[28px] p-5 md:p-6 shadow-sm">
                     <div class="flex items-start justify-between gap-3">
                         <div>
@@ -191,12 +247,11 @@
                     </div>
                 </div>
 
-                {{-- Status --}}
                 <div class="bg-white border border-slate-200 rounded-[28px] p-5 md:p-6 shadow-sm">
-                    <div class="text-base font-semibold text-slate-900">الحالة</div>
-                    <div class="text-xs text-slate-500 mt-1 mb-4">تصنيف حالة الدفع بصريًا.</div>
+                    <div class="text-base font-semibold text-slate-900">الحالة والإجراءات</div>
+                    <div class="text-xs text-slate-500 mt-1 mb-4">اعتماد أو رفض دفعات الكريبتو عند الحاجة.</div>
 
-                    <div class="flex flex-wrap items-center gap-2">
+                    <div class="flex flex-wrap items-center gap-2 mb-4">
                         <span
                             class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold {{ $meta['cls'] }}">
                             <span class="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
@@ -210,9 +265,58 @@
                             </span>
                         @endif
                     </div>
+
+                    @if ($canReviewCrypto)
+                        <div
+                            class="rounded-2xl border border-violet-200 bg-violet-50 p-4 text-sm text-violet-800 leading-6 mb-4">
+                            هذه العملية دفعة USDT بانتظار مراجعة الإدارة. بعد الاعتماد سيتم تحويلها إلى <b>مدفوع</b> وإنشاء
+                            الإيصال تلقائيًا.
+                        </div>
+
+                        <div class="space-y-4">
+                            <form method="POST" action="{{ route('admin.donations.confirmCrypto', $donation) }}"
+                                class="space-y-3">
+                                @csrf
+
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-2">ملاحظة عند الاعتماد
+                                        (اختياري)</label>
+                                    <textarea name="admin_payment_note" rows="3"
+                                        class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-black/10 focus:border-black/30 focus:outline-none transition"
+                                        placeholder="مثال: تم التحقق من Tx Hash ومطابقة المبلغ على شبكة TRC20">{{ old('admin_payment_note', $donation->admin_payment_note) }}</textarea>
+                                </div>
+
+                                <button type="submit"
+                                    class="w-full inline-flex items-center justify-center px-4 py-3 rounded-2xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition">
+                                    تأكيد دفعة USDT
+                                </button>
+                            </form>
+
+                            <form method="POST" action="{{ route('admin.donations.rejectCrypto', $donation) }}"
+                                class="space-y-3">
+                                @csrf
+
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-2">ملاحظة عند الرفض
+                                        (اختياري)</label>
+                                    <textarea name="admin_payment_note" rows="3"
+                                        class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-black/10 focus:border-black/30 focus:outline-none transition"
+                                        placeholder="مثال: Tx Hash غير صحيح أو لم يتم العثور على التحويل"></textarea>
+                                </div>
+
+                                <button type="submit"
+                                    class="w-full inline-flex items-center justify-center px-4 py-3 rounded-2xl bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 transition">
+                                    رفض دفعة USDT
+                                </button>
+                            </form>
+                        </div>
+                    @else
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 leading-6">
+                            لا توجد إجراءات مراجعة متاحة لهذه العملية حاليًا.
+                        </div>
+                    @endif
                 </div>
 
-                {{-- Receipt --}}
                 <div class="bg-white border border-slate-200 rounded-[28px] p-5 md:p-6 shadow-sm">
                     <div class="flex items-start justify-between gap-3">
                         <div>
@@ -296,7 +400,6 @@
                                 </div>
                             @endcan
                         @else
-                            {{-- No receipt --}}
                             @can('receipts.create')
                                 @if ($canGenerateReceiptByStatus)
                                     <form method="POST" action="{{ route('admin.donations.generateReceipt', $donation) }}">
@@ -323,7 +426,6 @@
                         @endif
                     </div>
                 </div>
-
             </div>
         </div>
     </div>

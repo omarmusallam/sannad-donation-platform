@@ -78,6 +78,9 @@ Route::prefix('admin')
                 Route::get('/', 'index')->name('index');
                 Route::get('/{donation}', 'show')->name('show');
                 Route::post('/{donation}/receipt', 'generateReceipt')->name('generateReceipt');
+
+                Route::post('/{donation}/confirm-crypto', 'confirmCrypto')->name('confirmCrypto');
+                Route::post('/{donation}/reject-crypto', 'rejectCrypto')->name('rejectCrypto');
             });
 
         /*
