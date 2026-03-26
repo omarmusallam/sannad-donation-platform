@@ -91,7 +91,7 @@ This project demonstrates practical experience in:
 ## Installation
 
 ```bash
-git clone https://github.com/your-username/sannad-donation-platform.git
+git clone https://github.com/omarmusallam/sannad-donation-platform.git
 cd sannad-donation-platform
 composer install
 npm install
