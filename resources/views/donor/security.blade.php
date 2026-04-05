@@ -1,6 +1,6 @@
 @extends('layouts.public')
 
-@section('title', app()->isLocale('en') ? 'Security settings' : 'إعدادات الأمان')
+@section('title', app()->isLocale('en') ? 'Security settings' : 'Ø¥Ø¹Ø¯Ø§Ø¯Ø§Øª Ø§Ù„Ø£Ù…Ø§Ù†')
 
 @section('content')
     @php
@@ -19,31 +19,31 @@
                 <div>
                     <div class="text-sm text-subtext">
                         <a class="hover:underline underline-offset-4" href="{{ $accountUrl }}">
-                            {{ $isEn ? 'Account' : 'الحساب' }}
+                            {{ $isEn ? 'Account' : 'Ø§Ù„Ø­Ø³Ø§Ø¨' }}
                         </a>
                         <span class="mx-2">/</span>
                         <span class="font-semibold text-text">
-                            {{ $isEn ? 'Security settings' : 'إعدادات الأمان' }}
+                            {{ $isEn ? 'Security settings' : 'Ø¥Ø¹Ø¯Ø§Ø¯Ø§Øª Ø§Ù„Ø£Ù…Ø§Ù†' }}
                         </span>
                     </div>
 
                     <h1 class="mt-4 text-3xl sm:text-4xl font-black tracking-tight text-text">
-                        {{ $isEn ? 'Security settings' : 'إعدادات الأمان' }}
+                        {{ $isEn ? 'Security settings' : 'Ø¥Ø¹Ø¯Ø§Ø¯Ø§Øª Ø§Ù„Ø£Ù…Ø§Ù†' }}
                     </h1>
 
                     <p class="mt-2 text-subtext leading-relaxed max-w-2xl">
                         {{ $isEn
                             ? 'Protect your donor account by updating your password regularly.'
-                            : 'قم بحماية حسابك عبر تحديث كلمة المرور بشكل دوري.' }}
+                            : 'Ù‚Ù… Ø¨Ø­Ù…Ø§ÙŠØ© Ø­Ø³Ø§Ø¨Ùƒ Ø¹Ø¨Ø± ØªØ­Ø¯ÙŠØ« ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ± Ø¨Ø´ÙƒÙ„ Ø¯ÙˆØ±ÙŠ.' }}
                     </p>
                 </div>
 
                 <div class="flex flex-wrap gap-3">
                     <a href="{{ $profileUrl }}" class="btn btn-secondary">
-                        {{ $isEn ? 'Profile settings' : 'إعدادات الحساب' }}
+                        {{ $isEn ? 'Profile settings' : 'Ø¥Ø¹Ø¯Ø§Ø¯Ø§Øª Ø§Ù„Ø­Ø³Ø§Ø¨' }}
                     </a>
                     <a href="{{ $accountUrl }}" class="btn btn-primary">
-                        {{ $isEn ? 'Back to account' : 'العودة للحساب' }}
+                        {{ $isEn ? 'Back to account' : 'Ø§Ù„Ø¹ÙˆØ¯Ø© Ù„Ù„Ø­Ø³Ø§Ø¨' }}
                     </a>
                 </div>
             </div>
@@ -55,13 +55,13 @@
 
                 <div class="card-muted p-5">
                     <div class="font-black text-text">
-                        {{ $isEn ? 'Security tips' : 'نصائح الأمان' }}
+                        {{ $isEn ? 'Security tips' : 'Ù†ØµØ§Ø¦Ø­ Ø§Ù„Ø£Ù…Ø§Ù†' }}
                     </div>
 
                     <ul class="mt-3 space-y-2 text-sm text-subtext">
-                        <li>• {{ $isEn ? 'Use a strong password.' : 'استخدم كلمة مرور قوية.' }}</li>
-                        <li>• {{ $isEn ? 'Do not share your login details.' : 'لا تشارك بيانات الدخول.' }}</li>
-                        <li>• {{ $isEn ? 'Update your password regularly.' : 'حدّث كلمة المرور بشكل دوري.' }}</li>
+                        <li>• {{ $isEn ? 'Use a strong password.' : 'Ø§Ø³ØªØ®Ø¯Ù… ÙƒÙ„Ù…Ø© Ù…Ø±ÙˆØ± Ù‚ÙˆÙŠØ©.' }}</li>
+                        <li>• {{ $isEn ? 'Do not share your login details.' : 'Ù„Ø§ ØªØ´Ø§Ø±Ùƒ Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø¯Ø®ÙˆÙ„.' }}</li>
+                        <li>• {{ $isEn ? 'Update your password regularly.' : 'Ø­Ø¯Ù‘Ø« ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ± Ø¨Ø´ÙƒÙ„ Ø¯ÙˆØ±ÙŠ.' }}</li>
                     </ul>
                 </div>
             </aside>
@@ -70,10 +70,10 @@
                 <div class="card p-6 sm:p-8">
                     <div class="mb-6">
                         <h2 class="text-xl font-black text-text">
-                            {{ $isEn ? 'Change password' : 'تغيير كلمة المرور' }}
+                            {{ $isEn ? 'Change password' : 'ØªØºÙŠÙŠØ± ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ±' }}
                         </h2>
                         <p class="mt-1 text-sm text-subtext">
-                            {{ $isEn ? 'Enter your current password and choose a new secure one.' : 'أدخل كلمة المرور الحالية ثم اختر كلمة مرور جديدة وآمنة.' }}
+                            {{ $isEn ? 'Enter your current password and choose a new secure one.' : 'Ø£Ø¯Ø®Ù„ ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ± Ø§Ù„Ø­Ø§Ù„ÙŠØ© Ø«Ù… Ø§Ø®ØªØ± ÙƒÙ„Ù…Ø© Ù…Ø±ÙˆØ± Ø¬Ø¯ÙŠØ¯Ø© ÙˆØ¢Ù…Ù†Ø©.' }}
                         </p>
                     </div>
 
@@ -90,7 +90,7 @@
 
                         <div>
                             <label class="block text-sm font-black mb-2 text-text">
-                                {{ $isEn ? 'Current password' : 'كلمة المرور الحالية' }}
+                                {{ $isEn ? 'Current password' : 'ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ± Ø§Ù„Ø­Ø§Ù„ÙŠØ©' }}
                             </label>
                             <input type="password" name="current_password" class="input" required>
                             @error('current_password')
@@ -101,7 +101,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
                                 <label class="block text-sm font-black mb-2 text-text">
-                                    {{ $isEn ? 'New password' : 'كلمة المرور الجديدة' }}
+                                    {{ $isEn ? 'New password' : 'ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ± Ø§Ù„Ø¬Ø¯ÙŠØ¯Ø©' }}
                                 </label>
                                 <input type="password" name="password" class="input" required>
                                 @error('password')
@@ -111,7 +111,7 @@
 
                             <div>
                                 <label class="block text-sm font-black mb-2 text-text">
-                                    {{ $isEn ? 'Confirm new password' : 'تأكيد كلمة المرور الجديدة' }}
+                                    {{ $isEn ? 'Confirm new password' : 'ØªØ£ÙƒÙŠØ¯ ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ± Ø§Ù„Ø¬Ø¯ÙŠØ¯Ø©' }}
                                 </label>
                                 <input type="password" name="password_confirmation" class="input" required>
                             </div>
@@ -119,7 +119,7 @@
 
                         <div class="pt-3">
                             <button class="btn btn-primary" type="submit">
-                                {{ $isEn ? 'Update password' : 'تحديث كلمة المرور' }}
+                                {{ $isEn ? 'Update password' : 'ØªØ­Ø¯ÙŠØ« ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ±' }}
                             </button>
                         </div>
                     </form>

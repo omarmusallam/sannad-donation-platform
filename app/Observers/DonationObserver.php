@@ -9,18 +9,33 @@ class DonationObserver
 {
     public function created(Donation $donation): void
     {
-        CampaignTotals::refresh($donation->campaign);
+        if ($donation->campaign) {
+            CampaignTotals::refresh($donation->campaign);
+        }
     }
 
     public function updated(Donation $donation): void
     {
         if ($donation->wasChanged(['status', 'amount', 'campaign_id'])) {
-            CampaignTotals::refresh($donation->campaign);
+            if ($donation->campaign) {
+                CampaignTotals::refresh($donation->campaign);
+            }
+
+            $originalCampaignId = $donation->getOriginal('campaign_id');
+            if ($originalCampaignId && $originalCampaignId !== $donation->campaign_id) {
+                $originalCampaign = \App\Models\Campaign::find($originalCampaignId);
+
+                if ($originalCampaign) {
+                    CampaignTotals::refresh($originalCampaign);
+                }
+            }
         }
     }
 
     public function deleted(Donation $donation): void
     {
-        CampaignTotals::refresh($donation->campaign);
+        if ($donation->campaign) {
+            CampaignTotals::refresh($donation->campaign);
+        }
     }
 }

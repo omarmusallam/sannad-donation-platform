@@ -7,6 +7,8 @@ use Illuminate\Support\Str;
 
 class Campaign extends Model
 {
+    public const DEFAULT_CURRENCY = 'USD';
+
     protected $fillable = [
         'title_ar',
         'title_en',
@@ -37,9 +39,15 @@ class Campaign extends Model
     protected static function booted()
     {
         static::creating(function ($campaign) {
+            $campaign->currency = self::DEFAULT_CURRENCY;
+
             if (empty($campaign->slug)) {
                 $campaign->slug = Str::slug($campaign->title_en ?? $campaign->title_ar);
             }
+        });
+
+        static::saving(function ($campaign) {
+            $campaign->currency = self::DEFAULT_CURRENCY;
         });
     }
 

@@ -69,5 +69,22 @@ class AppServiceProvider extends ServiceProvider
                 Limit::perMinute(3)->by(($email !== '' ? $email : 'guest') . '|' . $request->ip()),
             ];
         });
+
+        RateLimiter::for('donation-submit', function (Request $request) {
+            $email = Str::lower(trim((string) $request->input('donor_email')));
+            $campaignId = (string) $request->input('campaign_id', 'campaign');
+
+            return [
+                Limit::perMinute(12)->by($request->ip()),
+                Limit::perMinute(6)->by($campaignId . '|' . ($email !== '' ? $email : 'guest') . '|' . $request->ip()),
+            ];
+        });
+
+        RateLimiter::for('donation-crypto-submit', function (Request $request) {
+            return [
+                Limit::perMinute(10)->by($request->ip()),
+                Limit::perMinute(4)->by((string) $request->route('donation') . '|' . $request->ip()),
+            ];
+        });
     }
 }

@@ -12,8 +12,8 @@
 
         $title = $isEn ? 'My donations' : 'تبرعاتي';
         $subtitle = $isEn
-            ? 'A complete and organized view of all your donations, statuses, and receipts.'
-            : 'عرض كامل ومنظم لجميع تبرعاتك وحالاتها وإيصالاتها.';
+            ? 'A professional overview of your donations, receipts, payment states, and campaign history in one clean place.'
+            : 'عرض احترافي لتبرعاتك وإيصالاتك وحالات الدفع وسجل الحملات في مكان واحد وبأسلوب نظيف.';
 
         $campaignTitle = function ($campaign) use ($isEn) {
             if (!$campaign) {
@@ -58,7 +58,7 @@
     @endphp
 
     <div class="max-w-7xl mx-auto space-y-8">
-        <section class="relative overflow-hidden rounded-[32px] border border-border bg-surface p-6 sm:p-8 lg:p-10">
+        <section class="section-shell relative overflow-hidden p-6 sm:p-8 lg:p-10">
             <div class="absolute inset-0 -z-10 bg-gradient-to-b from-muted via-bg to-transparent"></div>
             <div class="pointer-events-none absolute -top-16 -right-16 h-72 w-72 rounded-full blur-3xl opacity-20"
                 style="background: radial-gradient(circle, rgba(var(--brand),.18), transparent 60%);"></div>
@@ -72,6 +72,8 @@
                         <span class="mx-2">/</span>
                         <span class="font-semibold text-text">{{ $title }}</span>
                     </div>
+
+                    <div class="eyebrow">{{ $isEn ? 'Donor records' : 'سجل المتبرع' }}</div>
 
                     <h1 class="mt-3 text-3xl sm:text-4xl font-black tracking-tight text-text">
                         {{ $title }}
@@ -113,27 +115,27 @@
 
             <div class="xl:col-span-3 space-y-6">
                 <section class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
-                    <div class="card p-5">
+                    <div class="kpi-tile">
                         <div class="text-sm text-subtext">{{ $isEn ? 'All' : 'الكل' }}</div>
                         <div class="mt-2 text-2xl font-black text-text">{{ (int) ($summary['total'] ?? 0) }}</div>
                     </div>
 
-                    <div class="card p-5">
+                    <div class="kpi-tile">
                         <div class="text-sm text-subtext">{{ $isEn ? 'Paid' : 'مدفوع' }}</div>
                         <div class="mt-2 text-2xl font-black text-text">{{ (int) ($summary['paid'] ?? 0) }}</div>
                     </div>
 
-                    <div class="card p-5">
+                    <div class="kpi-tile">
                         <div class="text-sm text-subtext">{{ $isEn ? 'Pending' : 'قيد الانتظار' }}</div>
                         <div class="mt-2 text-2xl font-black text-text">{{ (int) ($summary['pending'] ?? 0) }}</div>
                     </div>
 
-                    <div class="card p-5">
+                    <div class="kpi-tile">
                         <div class="text-sm text-subtext">{{ $isEn ? 'Failed' : 'فشل' }}</div>
                         <div class="mt-2 text-2xl font-black text-text">{{ (int) ($summary['failed'] ?? 0) }}</div>
                     </div>
 
-                    <div class="card p-5">
+                    <div class="kpi-tile">
                         <div class="text-sm text-subtext">{{ $isEn ? 'Refunded' : 'مسترد' }}</div>
                         <div class="mt-2 text-2xl font-black text-text">{{ (int) ($summary['refunded'] ?? 0) }}</div>
                     </div>

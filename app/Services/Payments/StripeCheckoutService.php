@@ -36,8 +36,8 @@ class StripeCheckoutService
 
         $session = Session::create([
             'mode' => 'payment',
-            'success_url' => locale_route('donate.success', ['donation' => $donation->id]) . '?session_id={CHECKOUT_SESSION_ID}',
-            'cancel_url' => locale_route('donate.cancel', ['donation' => $donation->id]),
+            'success_url' => locale_route('donate.success', ['donation' => $donation->public_id]) . '?session_id={CHECKOUT_SESSION_ID}',
+            'cancel_url' => locale_route('donate.cancel', ['donation' => $donation->public_id]),
             'payment_method_types' => ['card'],
             'customer_email' => $donation->donor_email ?: null,
             'client_reference_id' => (string) $donation->id,

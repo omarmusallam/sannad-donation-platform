@@ -108,17 +108,14 @@
                     @enderror
                 </div>
 
-                {{-- Currency --}}
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-2">العملة</label>
-                    <select name="currency"
-                        class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm
-                               focus:ring-2 focus:ring-black/10 focus:border-black/30 focus:outline-none transition">
-                        @foreach (['USD', 'EUR', 'ILS'] as $cur)
-                            <option value="{{ $cur }}" @selected(old('currency', $campaign->currency ?? 'USD') === $cur)>{{ $cur }}
-                            </option>
-                        @endforeach
-                    </select>
+                    <input type="hidden" name="currency" value="USD">
+                    <div
+                        class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-900">
+                        USD
+                    </div>
+                    <div class="text-xs text-slate-500 mt-2">تم تثبيت العملة على الدولار الأمريكي لضمان توحيد جميع الحملات.</div>
                     @error('currency')
                         <div class="text-rose-600 text-xs mt-2">{{ $message }}</div>
                     @enderror

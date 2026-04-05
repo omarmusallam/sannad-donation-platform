@@ -7,8 +7,8 @@
         $isEn = app()->isLocale('en');
 
         $subtitle = $isEn
-            ? 'Explore active campaigns and donate with confidence.'
-            : 'استعرض الحملات النشطة وتبرّع بثقة.';
+            ? 'Browse carefully presented campaigns with clear goals, visible progress, and a cleaner donation journey.'
+            : 'استعرض حملات معروضة بعناية بأهداف واضحة وتقدم مرئي وتجربة تبرع أنظف وأكثر احترافية.';
 
         $campaignTitle = fn($campaign) => $isEn
             ? ($campaign->title_en ?:
@@ -53,9 +53,10 @@
         $campaignShowUrl = fn($campaign) => locale_route('campaigns.show', ['slug' => $campaign->slug]);
     @endphp
 
-    <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5 mb-8">
+    <div class="section-shell relative overflow-hidden flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5 mb-8 p-6 sm:p-8 lg:p-10">
         <div>
-            <h1 class="text-3xl sm:text-4xl font-black tracking-tight text-text">
+            <div class="eyebrow">{{ $isEn ? 'Campaign directory' : 'دليل الحملات' }}</div>
+            <h1 class="mt-4 text-3xl sm:text-4xl font-black tracking-tight text-text">
                 {{ __('ui.campaigns') }}
             </h1>
             <p class="mt-2 text-subtext">{{ $subtitle }}</p>

@@ -9,11 +9,13 @@ use Carbon\Carbon;
 
 class DonationSeeder extends Seeder
 {
+    private const DEFAULT_CURRENCY = 'USD';
+
     public function run(): void
     {
         // إذا لا يوجد حملات، الأفضل تشغيل CampaignSeeder أولاً
         $campaigns = DB::table('campaigns')
-            ->select('id', 'goal_amount', 'currency', 'status')
+            ->select('id', 'goal_amount', 'status')
             ->get();
 
         if ($campaigns->count() === 0) {
@@ -64,8 +66,8 @@ class DonationSeeder extends Seeder
         );
 
         $paymentPool = array_merge(
-            array_fill(0, 85, 'mock'),
-            array_fill(0, 15, 'manual')
+            array_fill(0, 82, 'card'),
+            array_fill(0, 18, 'usdt_trc20')
         );
 
         $donationsRows = [];
@@ -135,8 +137,7 @@ class DonationSeeder extends Seeder
                 $amount = rand(5 * 100, 50 * 100) / 100;
             }
 
-            // currency: غالباً نفس عملة الحملة
-            $currency = $campaign->currency ?: 'USD';
+            $currency = self::DEFAULT_CURRENCY;
 
             // provider/provider_ref:
             // - paid/refunded: غالباً provider موجود
@@ -154,8 +155,9 @@ class DonationSeeder extends Seeder
             };
 
             if ($shouldHaveProvider) {
-                // seeder provider أو mock gateway
-                $provider = (rand(1, 100) <= 60) ? 'mock-gateway' : 'seeder';
+                $provider = $paymentMethod === 'card'
+                    ? ((rand(1, 100) <= 60) ? 'stripe' : 'seeder')
+                    : 'wallet';
                 // نضمن uniqueness داخل هذا batch
                 $providerRef = $batchId . ':' . Str::uuid()->toString();
             }
@@ -175,18 +177,39 @@ class DonationSeeder extends Seeder
                 : $now->copy()->subDays(rand(0, 180))->subMinutes(rand(0, 1440));
 
             $updatedAt = $createdAt->copy()->addMinutes(rand(0, 240));
+            $refundedAt = $status === 'refunded' && $paidAt
+                ? $paidAt->copy()->addMinutes(rand(30, 2880))
+                : null;
+            $cryptoSubmittedAt = $paymentMethod === 'usdt_trc20'
+                ? $createdAt->copy()->addMinutes(rand(1, 45))
+                : null;
+            $cryptoTxHash = $paymentMethod === 'usdt_trc20'
+                ? str_replace('-', '', (string) Str::uuid()) . str_replace('-', '', (string) Str::uuid())
+                : null;
+            $cryptoSenderWallet = $paymentMethod === 'usdt_trc20' && rand(1, 100) <= 70
+                ? 'T' . Str::upper(Str::random(33))
+                : null;
 
             $donationsRows[] = [
+                'public_id' => (string) Str::uuid(),
                 'campaign_id' => $campaignId,
                 'donor_name' => $donorName,
                 'donor_email' => $donorEmail,
                 'is_anonymous' => $isAnonymous,
                 'amount' => $amount,
+                'fees' => 0,
+                'net_amount' => in_array($status, ['paid', 'refunded'], true) ? $amount : null,
                 'currency' => $currency,
                 'payment_method' => $paymentMethod,
                 'status' => $status,
                 'provider' => $provider,
                 'provider_ref' => $providerRef,
+                'crypto_network' => $paymentMethod === 'usdt_trc20' ? 'trc20' : null,
+                'crypto_wallet_address' => $paymentMethod === 'usdt_trc20' ? config('services.crypto.usdt_trc20_wallet') : null,
+                'crypto_tx_hash' => $cryptoTxHash,
+                'crypto_sender_wallet' => $cryptoSenderWallet,
+                'crypto_submitted_at' => $cryptoSubmittedAt,
+                'refunded_at' => $refundedAt,
                 'paid_at' => $paidAt,
                 'created_at' => $createdAt,
                 'updated_at' => $updatedAt,

@@ -49,18 +49,18 @@
         $kPaidCount = (int) ($paidCount ?? 0);
         $kAvgDonation = (float) ($avgDonation ?? 0);
 
-        $heroTitle = $isEn ? 'Donate with trust. See the impact clearly.' : 'تبرّع بثقة. وشاهد الأثر بوضوح.';
+        $heroTitle = $isEn ? 'Verified giving with a calm, clear experience.' : 'تبرع موثّق بتجربة هادئة وواضحة.';
 
         $heroDesc =
             $tagline ?:
             ($isEn
-                ? 'A transparency-first donation platform: real-time progress, public reports, and consistent updates.'
-                : 'منصة تبرعات بأولوية الشفافية: تقدم لحظي، تقارير عامة، وتحديثات مستمرة.');
+                ? 'Support trusted campaigns through a professional donation flow built around clarity, reports, receipts, and secure follow-up.'
+                : 'ادعم الحملات الموثوقة عبر مسار تبرع احترافي مبني على الوضوح، والتقارير، والإيصالات، والمتابعة الآمنة.');
 
         $trustChips = [
             $isEn ? 'Verified reports' : 'تقارير موثقة',
-            $isEn ? 'Public transparency' : 'شفافية عامة',
-            $isEn ? 'Secure flow & receipts' : 'تدفق آمن وإيصالات',
+            $isEn ? 'USD-only consistency' : 'اتساق مالي بالدولار',
+            $isEn ? 'Secure receipts & tracking' : 'إيصالات وتتبع آمن',
         ];
 
         $steps = [
@@ -85,7 +85,7 @@
         ];
     @endphp
 
-    <section class="relative overflow-hidden rounded-[28px] border border-border bg-surface">
+    <section class="section-shell relative overflow-hidden">
         <div class="absolute inset-0 -z-10 bg-gradient-to-b from-muted via-bg to-transparent"></div>
         <div class="pointer-events-none absolute -top-20 -right-20 h-72 w-72 rounded-full blur-3xl opacity-25"
             style="background: radial-gradient(circle, rgba(var(--brand),.22), transparent 60%);"></div>
@@ -94,10 +94,9 @@
 
         <div class="p-6 sm:p-10 lg:p-12 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
             <div>
-                <div
-                    class="inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-1.5 text-xs font-bold text-subtext">
+                <div class="eyebrow">
                     <span class="h-2 w-2 rounded-full bg-success"></span>
-                    <span>{{ $isEn ? 'Transparency-first donations' : 'تبرعات بأولوية الشفافية' }}</span>
+                    <span>{{ $isEn ? 'Trust-centered giving' : 'تبرع يرتكز على الثقة' }}</span>
                 </div>
 
                 <h1 class="mt-5 text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight text-text">
@@ -130,22 +129,22 @@
                 </div>
 
                 <div class="mt-8 grid grid-cols-1 sm:grid-cols-4 gap-3">
-                    <div class="card p-4">
+                    <div class="kpi-tile">
                         <div class="text-xs text-subtext">{{ $isEn ? 'Total paid' : 'إجمالي المدفوع' }}</div>
                         <div class="mt-1 font-black text-text">{{ $money($kTotalPaid) }}</div>
                     </div>
 
-                    <div class="card p-4">
+                    <div class="kpi-tile">
                         <div class="text-xs text-subtext">{{ $isEn ? 'Donors' : 'المتبرعون' }}</div>
                         <div class="mt-1 font-black text-text">{{ number_format($kDonorsCount) }}</div>
                     </div>
 
-                    <div class="card p-4">
+                    <div class="kpi-tile">
                         <div class="text-xs text-subtext">{{ $isEn ? 'Paid donations' : 'تبرعات مدفوعة' }}</div>
                         <div class="mt-1 font-black text-text">{{ number_format($kPaidCount) }}</div>
                     </div>
 
-                    <div class="card p-4">
+                    <div class="kpi-tile">
                         <div class="text-xs text-subtext">{{ $isEn ? 'Active campaigns' : 'حملات نشطة' }}</div>
                         <div class="mt-1 font-black text-text">{{ number_format($kActiveCampaign) }}</div>
                     </div>
@@ -239,9 +238,9 @@
                     </div>
                 @endif
 
-                <div class="mt-6 card-muted p-4 text-sm text-subtext">
+                <div class="mt-6 card-muted p-4 text-sm text-subtext leading-relaxed">
                     <span class="font-black text-text">{{ $siteName }}</span>
-                    — {{ $isEn ? 'Built for measurable impact & trust.' : 'مبني لأثر قابل للقياس وثقة عالية.' }}
+                    {{ $isEn ? ' is built for measurable impact, quiet confidence, and donor trust.' : ' مبني لأثر قابل للقياس، وثقة هادئة، وتجربة متبرع احترافية.' }}
                 </div>
             </div>
         </div>

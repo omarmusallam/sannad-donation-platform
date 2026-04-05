@@ -8,7 +8,10 @@ use Illuminate\Support\Facades\DB;
 
 class Donation extends Model
 {
+    public const DEFAULT_CURRENCY = 'USD';
+
     protected $fillable = [
+        'public_id',
         'campaign_id',
         'donor_id',
         'donor_name',

@@ -211,7 +211,7 @@ class CampaignController extends Controller
             'description_ar'  => 'nullable|string',
             'description_en'  => 'nullable|string',
             'goal_amount'     => 'required|numeric|min:0',
-            'currency'        => 'required|string|max:3',
+            'currency'        => 'nullable|string|in:' . Campaign::DEFAULT_CURRENCY,
             'status'          => 'required|in:draft,active,paused,ended,archived',
             'is_featured'     => 'nullable|boolean',
             'priority'        => 'nullable|integer|min:0',

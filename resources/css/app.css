@@ -7,16 +7,15 @@
 ------------------------------*/
 @layer base {
     :root {
-        /* Light */
-        --bg: 255 255 255;
-        --surface: 255 255 255;
-        --muted: 248 250 252; /* slate-50 */
-        --border: 226 232 240; /* slate-200 */
-        --text: 15 23 42; /* slate-900 */
-        --subtext: 71 85 105; /* slate-600 */
+        --bg: 247 243 234;
+        --surface: 255 252 246;
+        --muted: 238 232 219;
+        --border: 211 202 184;
+        --text: 34 42 38;
+        --subtext: 92 101 94;
 
-        --brand: 79 70 229; /* indigo-600 */
-        --brand2: 16 185 129; /* emerald-500 */
+        --brand: 26 93 74;
+        --brand2: 191 127 58;
 
         --success: 16 185 129;
         --warning: 245 158 11;
@@ -24,16 +23,15 @@
     }
 
     .dark {
-        /* Dark */
-        --bg: 2 6 23; /* slate-950 */
-        --surface: 15 23 42; /* slate-900 */
-        --muted: 30 41 59; /* slate-800 */
-        --border: 51 65 85; /* slate-700 */
-        --text: 241 245 249; /* slate-100 */
-        --subtext: 148 163 184; /* slate-400 */
+        --bg: 20 28 25;
+        --surface: 29 39 35;
+        --muted: 40 52 47;
+        --border: 73 88 81;
+        --text: 241 236 224;
+        --subtext: 182 177 165;
 
-        --brand: 99 102 241; /* indigo-500 */
-        --brand2: 34 197 94; /* green-500 */
+        --brand: 87 183 154;
+        --brand2: 228 173 104;
     }
 
     html {
@@ -51,8 +49,14 @@
     }
 
     body {
+        font-family: "Cairo", ui-sans-serif, system-ui, sans-serif;
         background-color: rgb(var(--bg));
         color: rgb(var(--text));
+        background-image:
+            radial-gradient(circle at top left, rgba(var(--brand), 0.07), transparent 28%),
+            radial-gradient(circle at top right, rgba(var(--brand2), 0.08), transparent 24%),
+            linear-gradient(180deg, rgba(255, 255, 255, 0.4), transparent 24%);
+        min-height: 100vh;
     }
 
     ::selection {
@@ -70,15 +74,16 @@
     }
 
     .card {
-        @apply rounded-3xl border border-border bg-surface;
+        @apply rounded-[30px] border border-border bg-surface shadow-sm;
+        box-shadow: 0 14px 40px rgba(35, 42, 39, 0.06);
     }
 
     .card-muted {
-        @apply rounded-3xl border border-border bg-muted;
+        @apply rounded-[28px] border border-border bg-muted/90;
     }
 
     .btn {
-        @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 font-extrabold transition active:scale-[.99] focus:outline-none;
+        @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 font-extrabold transition duration-200 active:scale-[.99] focus:outline-none;
     }
 
     .btn-primary {
@@ -88,28 +93,29 @@
             rgb(var(--brand)),
             rgb(var(--brand2))
         );
-        @apply shadow-sm hover:shadow-soft;
+        @apply shadow-sm hover:-translate-y-0.5 hover:shadow-soft;
     }
 
     .btn-secondary {
-        @apply border border-border bg-surface text-text hover:bg-muted;
+        @apply border border-border bg-surface text-text hover:bg-muted hover:-translate-y-0.5;
     }
 
     .btn-ghost {
-        @apply text-subtext hover:bg-muted;
+        @apply text-subtext hover:bg-muted hover:text-text;
     }
 
     .badge {
-        @apply inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-1 text-xs font-bold text-subtext;
+        @apply inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-1.5 text-xs font-bold text-subtext;
     }
 
     .input {
         @apply w-full rounded-2xl border border-border bg-surface px-4 py-3 text-sm text-text placeholder:text-subtext/70 outline-none focus:ring-2;
         --tw-ring-color: rgba(var(--brand), 0.25);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
     }
 
     .navlink {
-        @apply px-3 py-2 rounded-xl font-extrabold transition;
+        @apply px-3 py-2 rounded-xl font-extrabold transition duration-200;
     }
 
     .navlink-idle {
@@ -119,6 +125,31 @@
     .navlink-active {
         @apply text-brand bg-muted ring-1;
         --tw-ring-color: rgba(var(--brand), 0.2);
+    }
+
+    .section-shell {
+        @apply rounded-[32px] border border-border bg-surface shadow-sm;
+        box-shadow: 0 18px 50px rgba(35, 42, 39, 0.07);
+    }
+
+    .eyebrow {
+        @apply inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-subtext;
+    }
+
+    .kpi-tile {
+        @apply rounded-[24px] border border-border bg-surface p-4 sm:p-5;
+    }
+
+    .header-icon-btn {
+        @apply inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-border bg-surface text-text transition hover:bg-muted;
+    }
+
+    .footer-link {
+        @apply block break-words text-subtext hover:text-text hover:underline underline-offset-4;
+    }
+
+    .footer-meta-link {
+        @apply whitespace-nowrap hover:text-text hover:underline underline-offset-4;
     }
 }
 

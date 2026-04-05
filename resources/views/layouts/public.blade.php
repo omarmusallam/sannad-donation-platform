@@ -1,4 +1,4 @@
-{{-- resources/views/layouts/public.blade.php --}}
+﻿{{-- resources/views/layouts/public.blade.php --}}
 <!doctype html>
 <html lang="{{ app()->getLocale() }}" dir="{{ app()->isLocale('ar') ? 'rtl' : 'ltr' }}" class="scrollbar-thin">
 
@@ -172,7 +172,7 @@
         $icon = function (string $k) {
             return match ($k) {
                 'facebook' => '<span aria-hidden="true" class="font-black">f</span>',
-                'x' => '<span aria-hidden="true" class="font-black">𝕏</span>',
+                'x' => '<span aria-hidden="true" class="font-black">X</span>',
                 'instagram' => '<span aria-hidden="true" class="font-black">◎</span>',
                 'youtube' => '<span aria-hidden="true" class="font-black">▶</span>',
                 'sun' => '<span aria-hidden="true" class="font-black">☀</span>',
@@ -272,12 +272,12 @@
 
     {{-- Top bar --}}
     <div class="hidden md:block border-b border-border/70 bg-bg/70 backdrop-blur">
-        <div class="container-app py-2.5 flex items-center justify-between text-xs text-subtext">
-            <div class="flex items-center gap-4">
+        <div class="container-app py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs text-subtext">
+            <div class="flex flex-wrap items-center gap-4">
                 <span class="inline-flex items-center gap-2">
                     <span class="h-2 w-2 rounded-full bg-success"></span>
                     <span class="font-black">
-                        {{ $isAr ? 'شفافية وتقارير دورية' : 'Transparency with periodic reports' }}
+                        {{ $isAr ? 'هوية واضحة وتقارير موثقة' : 'Clear identity and verified reporting' }}
                     </span>
                 </span>
 
@@ -294,7 +294,7 @@
                 @endif
             </div>
 
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center justify-end gap-2">
                 <button id="themeToggle"
                     class="px-2.5 py-1 rounded-lg border border-border hover:bg-muted transition font-black"
                     type="button" aria-label="Toggle theme">
@@ -322,7 +322,7 @@
 
     {{-- Header --}}
     <header class="sticky top-0 z-40 bg-bg/85 backdrop-blur border-b border-border/70">
-        <div class="container-app py-3.5 flex items-center justify-between gap-4">
+        <div class="container-app py-3.5 flex items-center justify-between gap-3 sm:gap-4">
 
             {{-- Brand --}}
             <a href="{{ $urlHome }}" class="flex items-center gap-3 min-w-0">
@@ -346,7 +346,7 @@
             </a>
 
             {{-- Desktop nav --}}
-            <div class="hidden lg:flex items-center gap-3">
+            <div class="hidden xl:flex items-center gap-3">
                 <nav class="flex items-center gap-1 text-sm">
                     @php
                         $activeCampaigns = $isActive($isEnPath ? 'en/campaigns' : 'campaigns');
@@ -397,11 +397,11 @@
                     @endif
                 </nav>
 
-                <form action="{{ $urlCampaigns }}" method="get" class="relative">
+                <form action="{{ $urlCampaigns }}" method="get" class="relative shrink-0">
                     <span class="absolute {{ $edgeStart }}-3 top-1/2 -translate-y-1/2 text-subtext/70 text-sm">
                         {!! $icon('search') !!}
                     </span>
-                    <input name="q" value="{{ $searchQ }}" class="input ps-9 w-[300px]"
+                    <input name="q" value="{{ $searchQ }}" class="input ps-9 w-[260px] 2xl:w-[300px]"
                         placeholder="{{ $isAr ? 'ابحث عن حملة...' : 'Search campaigns...' }}">
                 </form>
 
@@ -478,7 +478,7 @@
                                     <button type="submit"
                                         class="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-subtext hover:text-text hover:bg-muted transition">
                                         <span>{{ $isAr ? 'تسجيل الخروج' : 'Logout' }}</span>
-                                        <span class="text-subtext/60">⎋</span>
+                                        <span class="text-subtext/60">↩</span>
                                     </button>
                                 </form>
                             @endif
@@ -486,40 +486,47 @@
                     </details>
                 @else
                     @if ($hasDonorLogin)
-                        <a href="{{ locale_route('donor.login') }}" class="btn btn-secondary">
+                        <a href="{{ locale_route('donor.login') }}" class="btn btn-secondary whitespace-nowrap">
                             {{ $isAr ? 'تسجيل دخول' : 'Login' }}
                         </a>
                     @endif
 
                     @if ($hasDonorRegister)
-                        <a href="{{ locale_route('donor.register') }}" class="btn btn-secondary">
+                        <a href="{{ locale_route('donor.register') }}" class="btn btn-secondary whitespace-nowrap">
                             {{ $isAr ? 'إنشاء حساب' : 'Register' }}
                         </a>
                     @endif
                 @endif
 
-                <a href="{{ $urlDonate }}" class="btn btn-primary {{ $donateMargin }}">
+                <a href="{{ $urlDonate }}" class="btn btn-primary {{ $donateMargin }} whitespace-nowrap">
                     {{ $isAr ? 'تبرّع الآن' : 'Donate Now' }} <span aria-hidden="true">→</span>
                 </a>
             </div>
 
             {{-- Mobile actions --}}
-            <div class="lg:hidden flex items-center gap-2">
+            <div class="xl:hidden flex items-center gap-2 shrink-0">
+                <a href="{{ switch_locale_url() }}"
+                    class="header-icon-btn text-sm font-black"
+                    rel="nofollow"
+                    aria-label="{{ $isEnPath ? 'Switch to Arabic' : 'Switch to English' }}">
+                    {{ $isEnPath ? 'AR' : 'EN' }}
+                </a>
+
                 <button id="themeToggleMobile"
-                    class="px-3 py-2 rounded-2xl border border-border hover:bg-muted transition font-black"
+                    class="header-icon-btn font-black"
                     type="button" aria-label="Toggle theme">
                     <span id="themeIconMobile">{!! $icon('moon') !!}</span>
                 </button>
 
                 <details class="relative">
                     <summary
-                        class="list-none [&::-webkit-details-marker]:hidden cursor-pointer select-none px-3.5 py-2 rounded-2xl border border-border hover:bg-muted transition font-black"
+                        class="header-icon-btn list-none [&::-webkit-details-marker]:hidden cursor-pointer select-none font-black"
                         aria-label="{{ $isAr ? 'فتح القائمة' : 'Open menu' }}">
                         ☰
                     </summary>
 
                     <div
-                        class="absolute {{ $edgeEnd }}-0 mt-2 w-[22rem] bg-surface border border-border rounded-2xl shadow-soft overflow-hidden">
+                        class="absolute {{ $edgeEnd }}-0 mt-2 w-[min(22rem,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] bg-surface border border-border rounded-2xl shadow-soft overflow-hidden">
                         <div class="p-3 space-y-2">
                             @if (!empty($donor))
                                 <div class="rounded-2xl border border-border bg-surface p-3">
@@ -638,15 +645,9 @@
 
                         <div class="border-t border-border/60"></div>
 
-                        <div class="p-3 flex items-center justify-between text-sm">
-                            <a href="{{ switch_locale_url() }}"
-                                class="px-3 py-2 rounded-xl border border-border hover:bg-muted transition font-black"
-                                rel="nofollow">
-                                {{ $isEnPath ? 'AR' : 'EN' }}
-                            </a>
-
+                        <div class="p-3 flex items-center justify-end text-sm">
                             @if ($hasSocial)
-                                <div class="flex items-center gap-2">
+                                <div class="flex flex-wrap items-center justify-end gap-2">
                                     @foreach ($social as $key => $url)
                                         @continue(empty($url))
                                         <a href="{{ $url }}" target="_blank" rel="noopener"
@@ -672,7 +673,7 @@
 
     {{-- Footer --}}
     <footer class="border-t border-border/70 bg-bg">
-        <div class="container-app py-12 grid grid-cols-1 md:grid-cols-4 gap-10 text-sm">
+        <div class="container-app py-12 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 lg:gap-10 text-sm">
 
             <div class="md:col-span-1">
                 <div class="flex items-center gap-3">
@@ -696,7 +697,7 @@
                 </div>
 
                 <div class="mt-4 text-subtext leading-relaxed">
-                    {{ $isAr ? 'منصة تبرعات تربط الداعمين بالحملات عبر تقارير وتحديثات مستمرة.' : 'A donation platform connecting supporters with campaigns through continuous updates and reports.' }}
+                    {{ $isAr ? 'منصة تبرعات موثقة تقدم حملات واضحة وتقارير منتظمة وتجربة متبرع هادئة وآمنة.' : 'A verified donation platform with clear campaigns, regular reporting, and a calm secure donor experience.' }}
                 </div>
 
                 <div class="mt-5 flex flex-wrap gap-2">
@@ -710,8 +711,7 @@
                 <div class="font-black text-text mb-3">{{ $isAr ? 'روابط' : 'Links' }}</div>
                 <div class="space-y-2">
                     @foreach ($footerLinks as $lnk)
-                        <a class="block text-subtext hover:text-text hover:underline underline-offset-4"
-                            href="{{ $lnk['url'] }}">
+                        <a class="footer-link" href="{{ $lnk['url'] }}">
                             {{ $lnk['label'] }}
                         </a>
                     @endforeach
@@ -761,38 +761,39 @@
             </div>
 
             <div>
-                <div class="font-black text-text mb-3">{{ $isAr ? 'ابقَ على اطلاع' : 'Stay updated' }}</div>
+                <div class="font-black text-text mb-3">{{ $isAr ? 'دليل سريع' : 'Quick Guide' }}</div>
                 <div class="text-subtext text-sm leading-relaxed">
-                    {{ $isAr ? 'اشترك لتصلك تحديثات وتقارير جديدة. (يمكن ربطها لاحقًا بنظام بريد)' : 'Subscribe to receive new updates and reports. (You can wire this to email later)' }}
+                    {{ $isAr ? 'ابدأ من الحملات، راجع الشفافية، ثم أكمل التبرع مع الاحتفاظ بالإيصال ورابط التتبع.' : 'Start with campaigns, review transparency, then donate while keeping the receipt and tracking link.' }}
                 </div>
 
-                <form action="#" method="post" class="mt-4 flex gap-2">
-                    <input type="email" name="email" required class="input"
-                        placeholder="{{ $isAr ? 'بريدك الإلكتروني' : 'Your email' }}">
-                    <button type="submit" class="btn btn-primary shrink-0 px-4 py-3">
-                        {{ $isAr ? 'اشتراك' : 'Subscribe' }}
-                    </button>
-                </form>
+                <div class="mt-4 flex flex-col sm:flex-row sm:flex-wrap gap-3">
+                    <a href="{{ $urlCampaigns }}" class="btn btn-secondary shrink-0 px-4 py-3">
+                        {{ $isAr ? 'استعراض الحملات' : 'Browse campaigns' }}
+                    </a>
+                    <a href="{{ $urlDonate }}" class="btn btn-primary shrink-0 px-4 py-3">
+                        {{ $isAr ? 'تبرّع الآن' : 'Donate now' }}
+                    </a>
+                </div>
 
                 <div class="mt-3 text-xs text-subtext/80">
-                    {{ $isAr ? 'لن نرسل رسائل مزعجة.' : 'No spam. Unsubscribe anytime.' }}
+                    {{ $isAr ? 'روابط الإيصالات والتتبع متاحة مباشرة داخل المنصة عند الحاجة.' : 'Receipt and tracking links remain directly available inside the platform when needed.' }}
                 </div>
             </div>
         </div>
 
         <div class="border-t border-border/70">
             <div
-                class="container-app py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-subtext">
+                class="container-app py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-subtext text-center sm:text-start">
                 <div>
                     © {{ date('Y') }} {{ $siteName }} —
                     {{ $isAr ? 'جميع الحقوق محفوظة' : 'All rights reserved' }}
                 </div>
 
-                <div class="flex items-center gap-4">
-                    <a href="{{ $urlTransparency }}" class="hover:text-text hover:underline underline-offset-4">
+                <div class="flex flex-wrap items-center justify-center sm:justify-end gap-4">
+                    <a href="{{ $urlTransparency }}" class="footer-meta-link">
                         {{ $isAr ? 'الشفافية' : 'Transparency' }}
                     </a>
-                    <a href="{{ $urlReports }}" class="hover:text-text hover:underline underline-offset-4">
+                    <a href="{{ $urlReports }}" class="footer-meta-link">
                         {{ $isAr ? 'التقارير' : 'Reports' }}
                     </a>
                 </div>
@@ -810,7 +811,7 @@
                     {{ $isAr ? 'نستخدم ملفات تعريف الارتباط لتحسين التجربة وتحليلات الأداء.' : 'We use cookies to improve experience and performance analytics.' }}
                 </div>
 
-                <div class="flex gap-2">
+                <div class="flex flex-wrap gap-2">
                     <button id="cookieAccept" class="btn btn-primary px-4 py-2.5">
                         {{ $isAr ? 'موافق' : 'Accept' }}
                     </button>
@@ -896,3 +897,4 @@
 </body>
 
 </html>
+

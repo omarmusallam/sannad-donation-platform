@@ -38,7 +38,9 @@ $userFacingRoutes = function () {
     Route::get('/campaigns/{slug}', [CampaignController::class, 'show'])->name('campaigns.show');
 
     Route::get('/donate', [DonateController::class, 'show'])->name('donate');
-    Route::post('/donate', [DonateController::class, 'submit'])->name('donate.submit');
+    Route::post('/donate', [DonateController::class, 'submit'])
+        ->middleware('throttle:donation-submit')
+        ->name('donate.submit');
 
     Route::get('/transparency', [TransparencyController::class, 'index'])->name('transparency');
 
@@ -54,19 +56,20 @@ $userFacingRoutes = function () {
         ->middleware('signed')
         ->name('receipt.download.public');
 
-    Route::get('/donate/success/{donation}', [DonateController::class, 'success'])
+    Route::get('/donate/status/{donation:public_id}', [DonateController::class, 'success'])
         ->name('donate.success');
 
-    Route::get('/donate/cancel/{donation}', [DonateController::class, 'cancel'])
+    Route::get('/donate/cancel/{donation:public_id}', [DonateController::class, 'cancel'])
         ->name('donate.cancel');
 
-    Route::get('/donate/crypto/{donation}', [DonateController::class, 'crypto'])
+    Route::get('/donate/crypto/{donation:public_id}', [DonateController::class, 'crypto'])
         ->name('donate.crypto');
 
-    Route::post('/donate/crypto/{donation}/submit', [DonateController::class, 'submitCryptoTransfer'])
+    Route::post('/donate/crypto/{donation:public_id}/submit', [DonateController::class, 'submitCryptoTransfer'])
+        ->middleware('throttle:donation-crypto-submit')
         ->name('donate.crypto.submit');
 
-    Route::get('/donate/crypto/{donation}/pending', [DonateController::class, 'cryptoPending'])
+    Route::get('/donate/crypto/{donation:public_id}/pending', [DonateController::class, 'cryptoPending'])
         ->name('donate.crypto.pending');
 
     /*

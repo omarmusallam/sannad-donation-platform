@@ -7,6 +7,8 @@ use App\Models\Campaign;
 use App\Models\Donation;
 use App\Models\Receipt;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rule;
 
 class DonateController extends Controller
@@ -26,7 +28,7 @@ class DonateController extends Controller
             ->whereIn('status', ['active', 'paused'])
             ->orderByDesc('is_featured')
             ->orderByDesc('priority')
-            ->get(['id', 'title_ar', 'title_en', 'slug', 'currency']);
+            ->get(['id', 'title_ar', 'title_en', 'slug']);
 
         $amount = (float) $request->get('amount', 25);
         $amount = max(1, min(100000, $amount));
@@ -39,7 +41,7 @@ class DonateController extends Controller
         $data = $request->validate([
             'campaign_id' => ['required', 'exists:campaigns,id'],
             'amount' => ['required', 'numeric', 'min:1', 'max:100000'],
-            'currency' => ['required', 'string', 'size:3', Rule::in(['USD', 'EUR', 'ILS'])],
+            'currency' => ['nullable', 'string', 'size:3', Rule::in([Donation::DEFAULT_CURRENCY])],
             'payment_method' => ['required', Rule::in(['card', 'usdt_trc20'])],
             'donor_name' => ['nullable', 'string', 'max:255'],
             'donor_email' => ['nullable', 'email', 'max:255'],
@@ -63,7 +65,18 @@ class DonateController extends Controller
             $data['donor_email'] = $data['donor_email'] ?: $donor?->email;
         }
 
+        $data['currency'] = Donation::DEFAULT_CURRENCY;
+
+        if ($data['payment_method'] === 'usdt_trc20' && empty($data['donor_email'])) {
+            throw ValidationException::withMessages([
+                'donor_email' => app()->isLocale('en')
+                    ? 'An email is required so you can access the donation status and receipt later.'
+                    : 'البريد الإلكتروني مطلوب حتى تتمكن من الوصول إلى حالة التبرع والإيصال لاحقًا.',
+            ]);
+        }
+
         $donation = Donation::create([
+            'public_id' => (string) \Illuminate\Support\Str::uuid(),
             'campaign_id' => $campaign->id,
             'donor_id' => $donor?->id,
             'donor_name' => $data['donor_name'],
@@ -85,7 +98,7 @@ class DonateController extends Controller
         ]);
 
         if ($data['payment_method'] === 'usdt_trc20') {
-            return redirect()->to(locale_route('donate.crypto', ['donation' => $donation->id]));
+            return redirect()->to(locale_route('donate.crypto', ['donation' => $donation->public_id]));
         }
 
         return app(\App\Services\Payments\StripeCheckoutService::class)
@@ -99,17 +112,19 @@ class DonateController extends Controller
         $receipt = $donation->receipt
             ?? Receipt::where('donation_id', $donation->id)->latest()->first();
 
-        $receiptUrl = $receipt ? route('receipt.verify', $receipt) : null;
+        $receiptUrl = $receipt ? locale_route('receipt.verify', ['receipt' => $receipt]) : null;
 
         $downloadUrl = $receipt
-            ? \URL::temporarySignedRoute(
-                'receipt.download.public',
+            ? URL::temporarySignedRoute(
+                app()->isLocale('en') ? 'en.receipt.download.public' : 'receipt.download.public',
                 now()->addMinutes(30),
                 ['receipt' => $receipt]
             )
             : null;
 
-        return view('public.donate_success', compact('donation', 'receiptUrl', 'downloadUrl'));
+        $statusUrl = locale_route('donate.success', ['donation' => $donation->public_id]);
+
+        return view('public.donate_success', compact('donation', 'receiptUrl', 'downloadUrl', 'statusUrl'));
     }
 
     public function cancel(Donation $donation)
@@ -150,13 +165,15 @@ class DonateController extends Controller
             'status' => 'pending_crypto_review',
         ]);
 
-        return redirect()->to(locale_route('donate.crypto.pending', ['donation' => $donation->id]));
+        return redirect()->to(locale_route('donate.crypto.pending', ['donation' => $donation->public_id]));
     }
 
     public function cryptoPending(Donation $donation)
     {
         abort_unless($donation->payment_method === 'usdt_trc20', 404);
 
-        return view('public.donate_crypto_pending', compact('donation'));
+        $statusUrl = locale_route('donate.success', ['donation' => $donation->public_id]);
+
+        return view('public.donate_crypto_pending', compact('donation', 'statusUrl'));
     }
 }

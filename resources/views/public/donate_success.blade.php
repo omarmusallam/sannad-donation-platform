@@ -1,14 +1,10 @@
-```blade
 @extends('layouts.public')
 
-@section('title')
-    {{ app()->isLocale('en') ? 'Donation Status' : 'حالة التبرع' }}
-@endsection
+@section('title', app()->isLocale('en') ? 'Donation Status' : 'حالة التبرع')
 
 @section('content')
     @php
         $isEn = app()->isLocale('en');
-
         $money = fn($value) => number_format((float) $value, 2);
 
         $homeUrl = locale_route('home');
@@ -17,236 +13,176 @@
 
         $isPaid = $donation->status === 'paid';
         $isPending = $donation->status === 'pending';
+        $isPendingCryptoReview = $donation->status === 'pending_crypto_review';
         $isFailed = $donation->status === 'failed';
 
         $receiptNo = $isPaid ? $donation->receipt->receipt_no ?? null : null;
+        $statusLabel = match (true) {
+            $isPaid => $isEn ? 'Donation completed' : 'تم التبرع بنجاح',
+            $isPendingCryptoReview => $isEn ? 'Pending transfer review' : 'بانتظار مراجعة التحويل',
+            $isPending => $isEn ? 'Pending confirmation' : 'بانتظار تأكيد الدفع',
+            default => $isEn ? 'Payment not completed' : 'لم يكتمل الدفع',
+        };
+
+        $statusTone = match (true) {
+            $isPaid => 'text-emerald-600',
+            $isPending || $isPendingCryptoReview => 'text-amber-600',
+            default => 'text-rose-600',
+        };
+
+        $statusCard = match (true) {
+            $isPaid => 'border-emerald-200 bg-emerald-50/70',
+            $isPending || $isPendingCryptoReview => 'border-amber-200 bg-amber-50/70',
+            default => 'border-rose-200 bg-rose-50/70',
+        };
     @endphp
 
-    <div class="max-w-4xl mx-auto">
-        <div class="text-sm text-subtext mb-6">
-            <a class="hover:underline underline-offset-4" href="{{ $homeUrl }}">
-                {{ $isEn ? 'Home' : 'الرئيسية' }}
-            </a>
-            <span class="mx-2">/</span>
-            <span class="text-text font-semibold">
-                {{ $isEn ? 'Donation status' : 'حالة التبرع' }}
-            </span>
-        </div>
+    <div class="max-w-5xl mx-auto space-y-8">
+        <section class="section-shell p-7 sm:p-10">
+            <div class="text-sm text-subtext">
+                <a class="hover:underline underline-offset-4" href="{{ $homeUrl }}">{{ $isEn ? 'Home' : 'الرئيسية' }}</a>
+                <span class="mx-2">/</span>
+                <span class="text-text font-semibold">{{ $isEn ? 'Donation status' : 'حالة التبرع' }}</span>
+            </div>
 
-        <div class="card p-10 text-center relative overflow-hidden">
-            @if ($isPaid)
-                <div class="absolute inset-0 -z-10 bg-gradient-to-br from-success/10 via-transparent to-transparent"></div>
-                <div class="text-5xl font-black text-success mb-4">✔</div>
-            @elseif ($isPending)
-                <div class="absolute inset-0 -z-10 bg-gradient-to-br from-warning/10 via-transparent to-transparent"></div>
-                <div class="text-5xl font-black text-warning mb-4">⏳</div>
-            @else
-                <div class="absolute inset-0 -z-10 bg-gradient-to-br from-danger/10 via-transparent to-transparent"></div>
-                <div class="text-5xl font-black text-danger mb-4">✕</div>
-            @endif
+            <div class="mt-6 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+                <div class="max-w-3xl">
+                    <div class="eyebrow">{{ $isEn ? 'Donation follow-up' : 'متابعة التبرع' }}</div>
+                    <h1 class="mt-4 text-3xl sm:text-4xl font-black tracking-tight text-text">{{ $statusLabel }}</h1>
+                    <p class="mt-3 text-subtext leading-relaxed">
+                        @if ($isPaid)
+                            {{ $isEn ? 'Your donation was recorded successfully. Receipt access and secure verification are now available.' : 'تم تسجيل تبرعك بنجاح. أصبح الوصول إلى الإيصال والتحقق الآمن متاحًا الآن.' }}
+                        @elseif ($isPendingCryptoReview)
+                            {{ $isEn ? 'Your USDT transfer details were received and are under review before receipt issuance.' : 'تم استلام تفاصيل تحويل USDT وهي الآن قيد المراجعة قبل إصدار الإيصال.' }}
+                        @elseif ($isPending)
+                            {{ $isEn ? 'Your donation request was created and payment confirmation is still pending.' : 'تم إنشاء طلب التبرع ولا يزال تأكيد الدفع قيد الانتظار.' }}
+                        @else
+                            {{ $isEn ? 'The payment did not complete successfully. You can review the status and try again safely.' : 'لم تكتمل عملية الدفع بنجاح. يمكنك مراجعة الحالة والمحاولة مرة أخرى بأمان.' }}
+                        @endif
+                    </p>
+                </div>
 
-            <h1 class="text-3xl sm:text-4xl font-black text-text">
-                @if ($isPaid)
-                    {{ $isEn ? 'Thank You for Your Donation' : 'شكراً لتبرعك' }}
-                @elseif ($isPending)
-                    {{ $isEn ? 'Payment Confirmation Pending' : 'بانتظار تأكيد الدفع' }}
-                @else
-                    {{ $isEn ? 'Payment Not Completed' : 'لم يكتمل الدفع' }}
-                @endif
-            </h1>
+                <div class="rounded-3xl border p-5 sm:p-6 min-w-[280px] {{ $statusCard }}">
+                    <div class="text-sm text-subtext">{{ $isEn ? 'Current status' : 'الحالة الحالية' }}</div>
+                    <div class="mt-2 text-2xl font-black {{ $statusTone }}">{{ $statusLabel }}</div>
+                    <div class="mt-3 text-xs text-subtext">{{ $isEn ? 'Public tracking reference' : 'مرجع التتبع العام' }}</div>
+                    <div class="mt-1 font-mono text-sm break-all text-text">{{ $donation->public_id }}</div>
+                </div>
+            </div>
+        </section>
 
-            <p class="text-subtext mt-3 max-w-xl mx-auto leading-relaxed">
-                @if ($isPaid)
-                    {{ $isEn
-                        ? 'An official receipt has been issued and can be verified securely using the link below.'
-                        : 'تم إصدار إيصال رسمي ويمكن التحقق منه بأمان عبر الرابط أدناه.' }}
-                @elseif ($isPending)
-                    {{ $isEn
-                        ? 'Your payment is being confirmed. Please refresh this page in a few moments.'
-                        : 'جارٍ تأكيد عملية الدفع. يرجى تحديث الصفحة بعد لحظات.' }}
-                @else
-                    {{ $isEn ? 'The payment was not completed successfully.' : 'لم تكتمل عملية الدفع بنجاح.' }}
-                @endif
-            </p>
-        </div>
-
-        <div class="mt-8 card p-8">
-            <div class="grid md:grid-cols-2 gap-8 items-start">
-                <div>
-                    <div class="text-sm text-subtext">
-                        {{ $isEn ? 'Receipt Number' : 'رقم الإيصال' }}
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 card p-6 sm:p-8">
+                <div class="grid sm:grid-cols-2 gap-5">
+                    <div class="kpi-tile">
+                        <div class="text-xs text-subtext">{{ $isEn ? 'Amount' : 'المبلغ' }}</div>
+                        <div class="mt-2 text-2xl font-black text-text">{{ $money($donation->amount) }} <span class="text-base text-subtext">{{ $donation->currency }}</span></div>
                     </div>
 
-                    <div class="font-mono text-xl font-bold text-text mt-1">
-                        {{ $isPaid ? $receiptNo ?? '—' : '—' }}
+                    <div class="kpi-tile">
+                        <div class="text-xs text-subtext">{{ $isEn ? 'Payment method' : 'طريقة الدفع' }}</div>
+                        <div class="mt-2 font-black text-text">{{ $donation->payment_method === 'usdt_trc20' ? 'USDT (TRC20)' : ($isEn ? 'Card / Wallet checkout' : 'بطاقة / دفع إلكتروني') }}</div>
                     </div>
 
-                    <div class="mt-6 text-sm text-subtext">
-                        {{ $isEn ? 'Amount' : 'المبلغ' }}
+                    <div class="kpi-tile">
+                        <div class="text-xs text-subtext">{{ $isEn ? 'Receipt number' : 'رقم الإيصال' }}</div>
+                        <div class="mt-2 font-mono text-lg font-bold text-text">{{ $receiptNo ?: '—' }}</div>
                     </div>
 
-                    <div class="text-3xl font-black text-text mt-1">
-                        {{ $money($donation->amount) }}
-                        <span class="text-lg text-subtext">
-                            {{ $donation->currency }}
-                        </span>
+                    <div class="kpi-tile">
+                        <div class="text-xs text-subtext">{{ $isEn ? 'Recorded at' : 'تاريخ التسجيل' }}</div>
+                        <div class="mt-2 font-black text-text">{{ optional($donation->paid_at ?? $donation->created_at)->format('Y-m-d H:i') }}</div>
                     </div>
+                </div>
 
-                    <div class="mt-6 text-xs text-subtext">
-                        {{ $isEn ? 'Donation ID:' : 'رقم العملية:' }}
-                        <span class="font-mono">{{ $donation->id }}</span>
-                    </div>
-
-                    <div class="mt-3 text-xs text-subtext">
-                        {{ $isEn ? 'Status:' : 'الحالة:' }}
-                        <span class="font-semibold">
-                            @if ($isPaid)
-                                {{ $isEn ? 'Paid' : 'مدفوع' }}
-                            @elseif ($isPending)
-                                {{ $isEn ? 'Pending' : 'قيد الانتظار' }}
-                            @else
-                                {{ $isEn ? 'Failed' : 'فشل' }}
-                            @endif
-                        </span>
-                    </div>
+                <div class="mt-6 card-muted p-5">
+                    <div class="font-black text-text">{{ $isEn ? 'Secure tracking link' : 'رابط التتبع الآمن' }}</div>
+                    <div class="mt-2 text-sm text-subtext leading-relaxed">{{ $isEn ? 'Keep this link if you want to return later, especially when donating as a guest.' : 'احتفظ بهذا الرابط إذا أردت العودة لاحقًا، خاصة عند التبرع كضيف.' }}</div>
+                    <div class="mt-3 rounded-2xl border border-border bg-surface px-4 py-3 font-mono text-xs text-text break-all">{{ $statusUrl ?? request()->fullUrl() }}</div>
                 </div>
 
                 @if ($isPaid && !empty($receiptUrl))
-                    <div class="flex flex-col items-center">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={{ urlencode($receiptUrl) }}"
-                            class="rounded-xl border border-border shadow-sm"
-                            alt="{{ $isEn ? 'Receipt QR Code' : 'رمز QR للإيصال' }}">
-
-                        <div class="text-xs text-subtext mt-3 text-center">
-                            {{ $isEn ? 'Scan to verify this receipt' : 'امسح للتحقق من الإيصال' }}
-                        </div>
+                    <div class="mt-6 card-muted p-5">
+                        <div class="font-black text-text">{{ $isEn ? 'Receipt access' : 'الوصول إلى الإيصال' }}</div>
+                        <div class="mt-2 text-sm text-subtext leading-relaxed">{{ $isEn ? 'Your official receipt is available through a verification page and, when present, a signed PDF download.' : 'إيصالك الرسمي متاح عبر صفحة تحقق، ومعه تحميل PDF موقّع عند توفره.' }}</div>
+                        <div class="mt-3 rounded-2xl border border-border bg-surface px-4 py-3 font-mono text-xs text-text break-all">{{ $receiptUrl }}</div>
                     </div>
+                @endif
+
+                @if ($isPending || $isPendingCryptoReview)
+                    <div class="mt-6 rounded-2xl border border-amber-200 bg-amber-50/70 p-5 text-sm text-amber-900 leading-relaxed">
+                        {{ $isPendingCryptoReview
+                            ? ($isEn ? 'Your transfer details are stored and waiting for manual review. Once approved, the receipt will appear on this page.' : 'تم حفظ تفاصيل التحويل وهي بانتظار المراجعة اليدوية. عند الاعتماد سيظهر الإيصال في هذه الصفحة.')
+                            : ($isEn ? 'The platform is still waiting for payment confirmation. Avoid retrying immediately unless you are sure the first attempt failed.' : 'لا تزال المنصة بانتظار تأكيد الدفع. تجنب إعادة المحاولة مباشرة ما لم تكن متأكدًا من فشل المحاولة الأولى.') }}
+                    </div>
+                @endif
+
+                @if ($isFailed)
+                    <div class="mt-6 rounded-2xl border border-rose-200 bg-rose-50/70 p-5 text-sm text-rose-900 leading-relaxed">{{ $isEn ? 'The payment did not complete. You can safely start a new donation attempt from the donation page.' : 'لم تكتمل عملية الدفع. يمكنك بدء محاولة تبرع جديدة بأمان من صفحة التبرع.' }}</div>
                 @endif
             </div>
 
-            @if ($isPaid && !empty($receiptUrl))
-                <div class="mt-8 flex flex-wrap gap-3">
-                    <a href="{{ $receiptUrl }}" class="btn btn-primary">
-                        {{ $isEn ? 'Verify Receipt' : 'التحقق من الإيصال' }}
-                    </a>
+            <aside class="space-y-4">
+                <div class="card p-5">
+                    <div class="font-black text-text">{{ $isEn ? 'Actions' : 'إجراءات' }}</div>
+                    <div class="mt-4 grid gap-3">
+                        <button type="button" class="btn btn-secondary justify-center" onclick="copyText(@js($statusUrl ?? request()->fullUrl()), this)">{{ $isEn ? 'Copy status link' : 'نسخ رابط الحالة' }}</button>
 
-                    <button type="button" class="btn btn-secondary" onclick="copyText('{{ $receiptUrl }}', this)">
-                        {{ $isEn ? 'Copy Link' : 'نسخ الرابط' }}
-                    </button>
+                        @if ($isPaid && !empty($receiptUrl))
+                            <a href="{{ $receiptUrl }}" class="btn btn-primary justify-center">{{ $isEn ? 'Open receipt' : 'فتح الإيصال' }}</a>
+                            <button type="button" class="btn btn-secondary justify-center" onclick="copyText(@js($receiptUrl), this)">{{ $isEn ? 'Copy receipt link' : 'نسخ رابط الإيصال' }}</button>
+                            @if (!empty($downloadUrl))
+                                <a href="{{ $downloadUrl }}" class="btn btn-secondary justify-center">{{ $isEn ? 'Download PDF' : 'تحميل PDF' }}</a>
+                            @endif
+                        @endif
 
-                    <button type="button" class="btn btn-secondary" onclick="shareReceipt()">
-                        {{ $isEn ? 'Share' : 'مشاركة' }}
-                    </button>
+                        <a href="{{ $donateUrl }}" class="btn btn-secondary justify-center">{{ $isEn ? 'Donate again' : 'تبرّع مرة أخرى' }}</a>
+                        <a href="{{ $campaignsUrl }}" class="btn btn-secondary justify-center">{{ $isEn ? 'Browse campaigns' : 'استعراض الحملات' }}</a>
+                    </div>
+                </div>
 
-                    @if (!empty($downloadUrl))
-                        <a href="{{ $downloadUrl }}" class="btn btn-secondary">
-                            {{ $isEn ? 'Download PDF' : 'تحميل PDF' }}
-                        </a>
-                    @endif
+                <div class="card-muted p-5">
+                    <div class="font-black text-text">{{ $isEn ? 'Important notes' : 'ملاحظات مهمة' }}</div>
+                    <ul class="mt-3 space-y-2 text-sm text-subtext">
+                        @if ($isPaid)
+                            <li>• {{ $isEn ? 'Receipt verification stays available through the public-safe receipt link.' : 'يبقى التحقق من الإيصال متاحًا عبر رابط الإيصال العام الآمن.' }}</li>
+                            <li>• {{ $isEn ? 'Signed PDF links expire automatically for safer access.' : 'تنتهي روابط PDF الموقعة تلقائيًا لزيادة الأمان.' }}</li>
+                        @elseif ($isPending || $isPendingCryptoReview)
+                            <li>• {{ $isEn ? 'Keep this page or its link if you are not signed in.' : 'احتفظ بهذه الصفحة أو رابطها إذا لم تكن مسجل دخول.' }}</li>
+                            <li>• {{ $isEn ? 'Status updates will appear here once the review or confirmation changes.' : 'ستظهر تحديثات الحالة هنا عند تغير المراجعة أو التأكيد.' }}</li>
+                        @else
+                            <li>• {{ $isEn ? 'A failed payment does not issue a receipt.' : 'الدفع الفاشل لا يصدر إيصالًا.' }}</li>
+                            <li>• {{ $isEn ? 'You can start a clean new attempt from the donation page.' : 'يمكنك بدء محاولة جديدة نظيفة من صفحة التبرع.' }}</li>
+                        @endif
+                    </ul>
                 </div>
-            @endif
-
-            @if ($isPending)
-                <div
-                    class="mt-8 rounded-2xl border border-yellow-300/30 bg-yellow-500/10 p-4 text-sm text-yellow-200 leading-relaxed">
-                    {{ $isEn
-                        ? 'We have received your donation request and are waiting for payment confirmation from the payment gateway.'
-                        : 'تم استلام طلب التبرع ونحن بانتظار تأكيد الدفع من بوابة الدفع.' }}
-                </div>
-            @endif
-
-            @if ($isFailed)
-                <div
-                    class="mt-8 rounded-2xl border border-red-300/30 bg-red-500/10 p-4 text-sm text-red-200 leading-relaxed">
-                    {{ $isEn
-                        ? 'The payment did not complete successfully. You can try again using the button below.'
-                        : 'لم تكتمل عملية الدفع بنجاح. يمكنك المحاولة مرة أخرى عبر الزر أدناه.' }}
-                </div>
-            @endif
-
-            <div class="mt-8 flex flex-wrap gap-3">
-                <a href="{{ $donateUrl }}" class="btn btn-secondary">
-                    {{ $isEn ? 'Donate again' : 'تبرع مرة أخرى' }}
-                </a>
-
-                <a href="{{ $campaignsUrl }}" class="btn btn-secondary">
-                    {{ $isEn ? 'Browse campaigns' : 'استعراض الحملات' }}
-                </a>
-            </div>
-        </div>
-
-        <div class="mt-8 card-muted p-6 text-sm text-subtext leading-relaxed space-y-2">
-            @if ($isPaid)
-                <div>
-                    ✔
-                    {{ $isEn ? 'All receipts are digitally issued and verifiable.' : 'جميع الإيصالات موثقة رقمياً وقابلة للتحقق.' }}
-                </div>
-                <div>
-                    ✔
-                    {{ $isEn ? 'Download links are temporarily signed for security.' : 'رابط التحميل مؤقت لأسباب أمنية.' }}
-                </div>
-                <div>
-                    ✔
-                    {{ $isEn ? 'You may safely share this receipt link.' : 'يمكنك مشاركة رابط الإيصال بأمان.' }}
-                </div>
-            @elseif ($isPending)
-                <div>
-                    ✔
-                    {{ $isEn
-                        ? 'Payment confirmation may take a short moment depending on the payment gateway.'
-                        : 'قد يستغرق تأكيد الدفع لحظات قليلة حسب بوابة الدفع.' }}
-                </div>
-                <div>
-                    ✔
-                    {{ $isEn
-                        ? 'Do not repeat the payment unless you are sure the first attempt failed.'
-                        : 'لا تُعد عملية الدفع إلا إذا تأكدت أن المحاولة الأولى فشلت.' }}
-                </div>
-            @else
-                <div>
-                    ✔
-                    {{ $isEn ? 'You can safely return and try the donation again.' : 'يمكنك العودة والمحاولة مرة أخرى بأمان.' }}
-                </div>
-            @endif
-        </div>
+            </aside>
+        </section>
     </div>
 
     @push('scripts')
         <script>
             function copyText(text, button) {
-                const copiedText = "{{ $isEn ? 'Copied ✓' : '✔ تم النسخ' }}";
+                const copiedText = @js($isEn ? 'Copied ✓' : 'تم النسخ ✓');
+                const originalText = button.innerText;
 
                 if (navigator.clipboard && window.isSecureContext) {
                     navigator.clipboard.writeText(text).then(() => {
                         button.innerText = copiedText;
+                        setTimeout(() => button.innerText = originalText, 2000);
                     });
-                } else {
-                    const input = document.createElement('textarea');
-                    input.value = text;
-                    document.body.appendChild(input);
-                    input.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(input);
-                    button.innerText = copiedText;
+                    return;
                 }
-            }
 
-            function shareReceipt() {
-                const url = "{{ $receiptUrl ?? '' }}";
-
-                if (!url) return;
-
-                if (navigator.share) {
-                    navigator.share({
-                        title: "{{ $isEn ? 'Donation Receipt' : 'إيصال تبرع' }}",
-                        text: "{{ $isEn ? 'You can verify this official receipt via the link.' : 'يمكنك التحقق من هذا الإيصال الرسمي عبر الرابط.' }}",
-                        url: url
-                    });
-                } else {
-                    alert("{{ $isEn ? 'Sharing not supported in this browser.' : 'المشاركة غير مدعومة في هذا المتصفح.' }}");
-                }
+                const input = document.createElement('textarea');
+                input.value = text;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                document.body.removeChild(input);
+                button.innerText = copiedText;
+                setTimeout(() => button.innerText = originalText, 2000);
             }
         </script>
     @endpush
 @endsection
-```

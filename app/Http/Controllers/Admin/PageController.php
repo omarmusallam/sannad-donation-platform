@@ -123,13 +123,21 @@ class PageController extends Controller
 
             // 1) remove script tags
             $html = preg_replace('/<script\b[^>]*>(.*?)<\/script>/is', '', $html);
+            $html = preg_replace('/<(iframe|object|embed|form|input|button|textarea|select)\b[^>]*>(.*?)<\/\1>/is', '', $html);
+            $html = preg_replace('/<(iframe|object|embed|form|input|button|textarea|select)\b[^>]*\/?>/is', '', $html);
 
             // 2) remove inline event handlers like onclick="..."
             $html = preg_replace('/\son\w+\s*=\s*"[^"]*"/i', '', $html);
             $html = preg_replace("/\son\w+\s*=\s*'[^']*'/i", '', $html);
+            $html = preg_replace('/\son\w+\s*=\s*[^\s>]+/i', '', $html);
 
-            // 3) block javascript: in href/src
+            // 3) block dangerous protocols / attributes
             $html = preg_replace('/(href|src)\s*=\s*["\']\s*javascript:[^"\']*["\']/i', '$1="#"', $html);
+            $html = preg_replace('/(href|src)\s*=\s*["\']\s*data:\s*text\/html[^"\']*["\']/i', '$1="#"', $html);
+            $html = preg_replace('/\ssrcdoc\s*=\s*"[^"]*"/i', '', $html);
+            $html = preg_replace("/\ssrcdoc\s*=\s*'[^']*'/i", '', $html);
+            $html = preg_replace('/\sstyle\s*=\s*"[^"]*expression\s*\([^"]*"/i', '', $html);
+            $html = preg_replace("/\sstyle\s*=\s*'[^']*expression\s*\([^']*'/i", '', $html);
 
             $data[$key] = $html;
         }

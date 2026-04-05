@@ -39,8 +39,6 @@ class CampaignSeeder extends Seeder
 
         // 2) إعدادات عامة
         $now = Carbon::now();
-        $currencies = ['USD', 'EUR', 'ILS', 'JOD', 'GBP'];
-
         // 3) بيانات شبه واقعية (عناوين + وصف عربي/انجليزي)
         $items = [
             [
@@ -154,7 +152,7 @@ class CampaignSeeder extends Seeder
                 'description_en' => $item['description_en'],
                 'goal_amount' => $goal,
                 'current_amount' => $current,
-                'currency' => $currencies[array_rand($currencies)],
+                'currency' => 'USD',
                 'status' => $status,
                 'is_featured' => (bool) $item['featured'],
                 'priority' => (int) $item['priority'],
