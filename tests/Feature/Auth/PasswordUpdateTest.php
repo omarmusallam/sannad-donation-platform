@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
-use App\Models\User;
+use App\Models\Donor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -11,41 +11,44 @@ class PasswordUpdateTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_password_can_be_updated(): void
+    public function test_password_can_be_updated_from_security_page(): void
     {
-        $user = User::factory()->create();
+        $donor = Donor::create([
+            'name' => 'Security Donor',
+            'email' => 'security@example.com',
+            'password' => Hash::make('OldSecure123!'),
+        ]);
 
-        $response = $this
-            ->actingAs($user)
-            ->from('/profile')
-            ->put('/password', [
-                'current_password' => 'password',
-                'password' => 'new-password',
-                'password_confirmation' => 'new-password',
+        $response = $this->actingAs($donor, 'donor')
+            ->from('/account/security')
+            ->put('/account/security', [
+                'current_password' => 'OldSecure123!',
+                'password' => 'NewSecure123!',
+                'password_confirmation' => 'NewSecure123!',
             ]);
 
-        $response
-            ->assertSessionHasNoErrors()
-            ->assertRedirect('/profile');
-
-        $this->assertTrue(Hash::check('new-password', $user->refresh()->password));
+        $response->assertRedirect('/account/security');
+        $response->assertSessionHasNoErrors();
+        $this->assertTrue(Hash::check('NewSecure123!', $donor->fresh()->password));
     }
 
     public function test_correct_password_must_be_provided_to_update_password(): void
     {
-        $user = User::factory()->create();
+        $donor = Donor::create([
+            'name' => 'Security Donor',
+            'email' => 'security@example.com',
+            'password' => Hash::make('OldSecure123!'),
+        ]);
 
-        $response = $this
-            ->actingAs($user)
-            ->from('/profile')
-            ->put('/password', [
+        $response = $this->actingAs($donor, 'donor')
+            ->from('/account/security')
+            ->put('/account/security', [
                 'current_password' => 'wrong-password',
-                'password' => 'new-password',
-                'password_confirmation' => 'new-password',
+                'password' => 'NewSecure123!',
+                'password_confirmation' => 'NewSecure123!',
             ]);
 
-        $response
-            ->assertSessionHasErrorsIn('updatePassword', 'current_password')
-            ->assertRedirect('/profile');
+        $response->assertRedirect('/account/security');
+        $response->assertSessionHasErrors('current_password');
     }
 }

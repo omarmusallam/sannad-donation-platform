@@ -1,4 +1,4 @@
-@extends('layouts.public')
+﻿@extends('layouts.public')
 
 @section('title', $campaign->title)
 
@@ -14,16 +14,16 @@
             : 'bg-warning/10 text-warning border-warning/25';
         $money = fn($value) => number_format((float) $value, 2);
         $remaining = max(0, (float) $campaign->goal_amount - (float) $campaign->current_amount);
-        $updateTitle = fn($update) => $isEn ? $update->title_en ?? ($update->title_ar ?? '') : $update->title_ar ?? ($update->title_en ?? '');
-        $updateBody = fn($update) => $isEn ? $update->body_en ?? ($update->body_ar ?? '') : $update->body_ar ?? ($update->body_en ?? '');
+        $updateTitle = fn($update) => $isEn ? ($update->title_en ?? ($update->title_ar ?? '')) : ($update->title_ar ?? ($update->title_en ?? ''));
+        $updateBody = fn($update) => $isEn ? ($update->body_en ?? ($update->body_ar ?? '')) : ($update->body_ar ?? ($update->body_en ?? ''));
         $reportTitle = fn($report) => $isEn ? ($report->title_en ?: $report->title_ar) : ($report->title_ar ?: $report->title_en);
         $shareLabel = $isEn ? 'Copy campaign link' : 'نسخ رابط الحملة';
         $copiedLabel = $isEn ? 'Copied!' : 'تم النسخ!';
         $progress = max(0, min(100, (int) ($campaign->progress_percent ?? 0)));
-        $heroImage = $campaign->cover_url ?? ($campaign->cover_image_path ? asset('storage/' . $campaign->cover_image_path) : null);
+        $heroImage = $campaign->cover_url;
     @endphp
 
-    <section class="section-shell mb-8">
+<section class="section-shell mb-8 overflow-hidden p-6 sm:p-8 lg:p-10">
         <div class="text-sm text-subtext">
             <a class="hover:underline underline-offset-4" href="{{ $campaignsUrl }}">{{ $isEn ? 'Campaigns' : 'الحملات' }}</a>
             <span class="mx-2">/</span>
@@ -51,7 +51,13 @@
             <div class="rounded-[28px] border border-border bg-surface overflow-hidden">
                 <div class="relative h-72 bg-muted">
                     @if ($heroImage)
-                        <img src="{{ $heroImage }}" class="w-full h-full object-cover" alt="">
+                        <img
+                            src="{{ $heroImage }}"
+                            class="w-full h-full object-cover"
+                            alt="{{ $campaign->title }}"
+                            loading="lazy"
+                            onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden');">
+                        <div class="hidden w-full h-full bg-gradient-to-br from-muted to-bg"></div>
                     @else
                         <div class="w-full h-full bg-gradient-to-br from-muted to-bg"></div>
                     @endif
@@ -71,10 +77,10 @@
                 </div>
 
                 <div class="p-7 sm:p-8">
-                    <div class="flex justify-between items-center text-sm mb-2">
+                    <div class="flex justify-between items-center text-sm mb-2 gap-3">
                         <div class="text-subtext">
                             <span class="font-black text-text">{{ $money($campaign->current_amount) }} {{ $campaign->currency }}</span>
-                            <span class="text-subtext">{{ $isEn ? 'raised' : 'تم جمعه' }}</span>
+                            <span>{{ $isEn ? 'raised' : 'تم جمعه' }}</span>
                         </div>
                         <div class="font-black text-text">{{ $progress }}%</div>
                     </div>
@@ -94,7 +100,7 @@
 
                     <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div class="card-muted p-4"><div class="text-xs text-subtext">{{ $isEn ? 'Currency' : 'العملة' }}</div><div class="mt-1 font-black text-text">{{ $campaign->currency }}</div></div>
-                        <div class="card-muted p-4"><div class="text-xs text-subtext">{{ $isEn ? 'Payment support' : 'خيارات الدفع' }}</div><div class="mt-1 font-black text-text">{{ $isEn ? 'Card and USDT' : 'بطاقات وUSDT' }}</div></div>
+                        <div class="card-muted p-4"><div class="text-xs text-subtext">{{ $isEn ? 'Payment support' : 'خيارات الدفع' }}</div><div class="mt-1 font-black text-text">{{ $isEn ? 'Card and USDT' : 'بطاقات و USDT' }}</div></div>
                         <div class="card-muted p-4"><div class="text-xs text-subtext">{{ $isEn ? 'Transparency' : 'الشفافية' }}</div><div class="mt-1 font-black text-text">{{ $isEn ? 'Reports and updates available' : 'تقارير وتحديثات متاحة' }}</div></div>
                     </div>
                 </div>
@@ -140,12 +146,12 @@
                 <h2 class="text-xl font-black text-text mb-5">{{ $isEn ? 'Latest Donations' : 'آخر التبرعات' }}</h2>
                 <div class="space-y-3">
                     @forelse($latestDonations as $donation)
-                        <div class="flex items-center justify-between rounded-2xl border border-border bg-muted px-4 py-3 hover:bg-muted/70 transition">
+                        <div class="flex items-center justify-between rounded-2xl border border-border bg-muted px-4 py-3 hover:bg-muted/70 transition gap-3">
                             <div>
                                 <div class="font-bold text-text">{{ $donation->is_anonymous ? ($isEn ? 'Anonymous' : 'مجهول') : ($donation->donor_name ?: ($isEn ? 'Donor' : 'متبرع')) }}</div>
                                 <div class="text-xs text-subtext mt-0.5">{{ optional($donation->created_at)->format('Y-m-d H:i') }}</div>
                             </div>
-                            <div class="font-black text-text">{{ $money($donation->amount) }} {{ $donation->currency }}</div>
+                            <div class="font-black text-text whitespace-nowrap">{{ $money($donation->amount) }} {{ $donation->currency }}</div>
                         </div>
                     @empty
                         <div class="text-sm text-subtext">{{ $isEn ? 'No donations yet.' : 'لا توجد تبرعات بعد.' }}</div>
@@ -190,7 +196,10 @@
                     <span aria-hidden="true">→</span>
                 </a>
 
-                <button type="button" onclick="navigator.clipboard.writeText(window.location.href); this.innerText='{{ $copiedLabel }}';" class="btn btn-secondary w-full">
+                <button
+                    type="button"
+                    onclick="navigator.clipboard.writeText(window.location.href); this.innerText='{{ $copiedLabel }}';"
+                    class="btn btn-secondary w-full">
                     {{ $shareLabel }}
                 </button>
 

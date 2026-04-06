@@ -26,23 +26,9 @@ class LoginDonorRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => [
-                'bail',
-                'required',
-                'string',
-                'max:255',
-                'email:rfc',
-            ],
-            'password' => [
-                'bail',
-                'required',
-                'string',
-                'max:128',
-            ],
-            'remember' => [
-                'nullable',
-                'boolean',
-            ],
+            'email' => ['bail', 'required', 'string', 'max:255', 'email:rfc'],
+            'password' => ['bail', 'required', 'string', 'max:128'],
+            'remember' => ['nullable', 'boolean'],
         ];
     }
 
@@ -55,9 +41,7 @@ class LoginDonorRequest extends FormRequest
             'password' => (string) $this->input('password'),
         ];
 
-        $remember = $this->boolean('remember');
-
-        if (!Auth::guard('donor')->attempt($credentials, $remember)) {
+        if (!Auth::guard('donor')->attempt($credentials, $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey(), 60);
 
             throw ValidationException::withMessages([
@@ -91,33 +75,13 @@ class LoginDonorRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'email.required' => $this->isEn()
-                ? 'Email is required.'
-                : 'البريد الإلكتروني مطلوب.',
-
-            'email.string' => $this->isEn()
-                ? 'The email must be plain text.'
-                : 'يجب أن يكون البريد الإلكتروني نصًا عاديًا.',
-
-            'email.max' => $this->isEn()
-                ? 'The email must not exceed 255 characters.'
-                : 'يجب ألا يزيد البريد الإلكتروني عن 255 حرفًا.',
-
-            'email.email' => $this->isEn()
-                ? 'Please enter a valid email address.'
-                : 'يرجى إدخال بريد إلكتروني صحيح.',
-
-            'password.required' => $this->isEn()
-                ? 'Password is required.'
-                : 'كلمة المرور مطلوبة.',
-
-            'password.string' => $this->isEn()
-                ? 'The password must be plain text.'
-                : 'يجب أن تكون كلمة المرور نصًا عاديًا.',
-
-            'password.max' => $this->isEn()
-                ? 'The password must not exceed 128 characters.'
-                : 'يجب ألا تزيد كلمة المرور عن 128 حرفًا.',
+            'email.required' => $this->isEn() ? 'Email is required.' : 'البريد الإلكتروني مطلوب.',
+            'email.string' => $this->isEn() ? 'The email must be plain text.' : 'يجب أن يكون البريد الإلكتروني نصًا عاديًا.',
+            'email.max' => $this->isEn() ? 'The email must not exceed 255 characters.' : 'يجب ألا يزيد البريد الإلكتروني عن 255 حرفًا.',
+            'email.email' => $this->isEn() ? 'Please enter a valid email address.' : 'يرجى إدخال بريد إلكتروني صحيح.',
+            'password.required' => $this->isEn() ? 'Password is required.' : 'كلمة المرور مطلوبة.',
+            'password.string' => $this->isEn() ? 'The password must be plain text.' : 'يجب أن تكون كلمة المرور نصًا عاديًا.',
+            'password.max' => $this->isEn() ? 'The password must not exceed 128 characters.' : 'يجب ألا تزيد كلمة المرور عن 128 حرفًا.',
         ];
     }
 
@@ -136,9 +100,7 @@ class LoginDonorRequest extends FormRequest
 
     public function throttleKey(): string
     {
-        return Str::transliterate(
-            Str::lower((string) $this->input('email')) . '|' . $this->ip()
-        );
+        return Str::transliterate(Str::lower((string) $this->input('email')) . '|' . $this->ip());
     }
 
     private function isEn(): bool

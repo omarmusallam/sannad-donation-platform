@@ -25,26 +25,13 @@ class RegisterDonorRequest extends FormRequest
     {
         $isEn = app()->isLocale('en');
 
-        $emailRule = extension_loaded('intl')
-            ? 'email:rfc,dns,spoof'
-            : 'email:rfc';
+        $emailRule = app()->environment('testing') || ! extension_loaded('intl')
+            ? 'email:rfc'
+            : 'email:rfc,dns,spoof';
 
         return [
-            'name' => [
-                'nullable',
-                'string',
-                'min:2',
-                'max:120',
-            ],
-
-            'email' => [
-                'required',
-                'string',
-                'max:255',
-                $emailRule,
-                Rule::unique('donors', 'email'),
-            ],
-
+            'name' => ['nullable', 'string', 'min:2', 'max:120'],
+            'email' => ['required', 'string', 'max:255', $emailRule, Rule::unique('donors', 'email')],
             'password' => [
                 'required',
                 'string',
@@ -97,13 +84,11 @@ class RegisterDonorRequest extends FormRequest
             'name.string' => $isEn ? 'The name must be text.' : 'يجب أن يكون الاسم نصًا.',
             'name.min' => $isEn ? 'The name must be at least 2 characters.' : 'يجب أن لا يقل الاسم عن حرفين.',
             'name.max' => $isEn ? 'The name may not be greater than 120 characters.' : 'يجب ألا يزيد الاسم عن 120 حرفًا.',
-
             'email.required' => $isEn ? 'Email is required.' : 'البريد الإلكتروني مطلوب.',
             'email.string' => $isEn ? 'The email must be text.' : 'يجب أن يكون البريد الإلكتروني نصًا.',
             'email.max' => $isEn ? 'The email may not be greater than 255 characters.' : 'يجب ألا يزيد البريد الإلكتروني عن 255 حرفًا.',
             'email.email' => $isEn ? 'Please enter a valid email address.' : 'يرجى إدخال بريد إلكتروني صحيح.',
             'email.unique' => $isEn ? 'This email is already registered.' : 'هذا البريد الإلكتروني مسجل مسبقًا.',
-
             'password.required' => $isEn ? 'Password is required.' : 'كلمة المرور مطلوبة.',
             'password.string' => $isEn ? 'The password must be text.' : 'يجب أن تكون كلمة المرور نصًا.',
             'password.min' => $isEn ? 'The password must be at least 10 characters.' : 'يجب ألا تقل كلمة المرور عن 10 أحرف.',

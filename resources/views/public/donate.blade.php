@@ -26,7 +26,7 @@
     @endphp
 
     <div class="max-w-6xl mx-auto">
-        <section class="section-shell mb-8">
+<section class="section-shell mb-8 overflow-hidden p-6 sm:p-8 lg:p-10">
             <div class="text-sm text-subtext">
                 <a class="hover:underline underline-offset-4" href="{{ $urlHome }}">{{ $isEn ? 'Home' : 'الرئيسية' }}</a>
                 <span class="mx-2">/</span>

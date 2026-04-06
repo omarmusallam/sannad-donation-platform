@@ -46,6 +46,7 @@ class CampaignController extends Controller
     {
         $campaign = Campaign::query()
             ->where('slug', $slug)
+            ->whereIn('status', ['active', 'paused'])
             ->firstOrFail();
 
         $donorsCount = $campaign->donations()

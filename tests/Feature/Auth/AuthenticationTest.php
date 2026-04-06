@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\Auth;
 
-use App\Models\User;
-use App\Providers\RouteServiceProvider;
+use App\Models\Donor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class AuthenticationTest extends TestCase
@@ -13,43 +13,53 @@ class AuthenticationTest extends TestCase
 
     public function test_login_screen_can_be_rendered(): void
     {
-        $response = $this->get('/login');
-
-        $response->assertStatus(200);
+        $this->get('/login')->assertOk();
     }
 
-    public function test_users_can_authenticate_using_the_login_screen(): void
+    public function test_donors_can_authenticate_using_the_login_screen(): void
     {
-        $user = User::factory()->create();
+        $donor = Donor::create([
+            'name' => 'Test Donor',
+            'email' => 'donor@example.com',
+            'password' => Hash::make('password'),
+        ]);
 
         $response = $this->post('/login', [
-            'email' => $user->email,
+            'email' => $donor->email,
             'password' => 'password',
         ]);
 
-        $this->assertAuthenticated();
-        $response->assertRedirect(RouteServiceProvider::HOME);
+        $this->assertAuthenticated('donor');
+        $response->assertRedirect('/account');
     }
 
-    public function test_users_can_not_authenticate_with_invalid_password(): void
+    public function test_donors_can_not_authenticate_with_invalid_password(): void
     {
-        $user = User::factory()->create();
-
-        $this->post('/login', [
-            'email' => $user->email,
-            'password' => 'wrong-password',
+        $donor = Donor::create([
+            'name' => 'Test Donor',
+            'email' => 'donor@example.com',
+            'password' => Hash::make('password'),
         ]);
 
-        $this->assertGuest();
+        $this->from('/login')->post('/login', [
+            'email' => $donor->email,
+            'password' => 'wrong-password',
+        ])->assertRedirect('/login');
+
+        $this->assertGuest('donor');
     }
 
-    public function test_users_can_logout(): void
+    public function test_donors_can_logout(): void
     {
-        $user = User::factory()->create();
+        $donor = Donor::create([
+            'name' => 'Test Donor',
+            'email' => 'donor@example.com',
+            'password' => Hash::make('password'),
+        ]);
 
-        $response = $this->actingAs($user)->post('/logout');
+        $response = $this->actingAs($donor, 'donor')->post('/logout');
 
-        $this->assertGuest();
-        $response->assertRedirect('/');
+        $this->assertGuest('donor');
+        $response->assertRedirect('/login');
     }
 }

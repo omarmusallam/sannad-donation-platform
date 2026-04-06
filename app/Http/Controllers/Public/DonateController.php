@@ -8,8 +8,9 @@ use App\Models\Donation;
 use App\Models\Receipt;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class DonateController extends Controller
 {
@@ -61,8 +62,8 @@ class DonateController extends Controller
             $data['donor_name'] = null;
             $data['donor_email'] = null;
         } else {
-            $data['donor_name'] = $data['donor_name'] ?: $donor?->name;
-            $data['donor_email'] = $data['donor_email'] ?: $donor?->email;
+            $data['donor_name'] = $data['donor_name'] ?? $donor?->name;
+            $data['donor_email'] = $data['donor_email'] ?? $donor?->email;
         }
 
         $data['currency'] = Donation::DEFAULT_CURRENCY;
@@ -76,23 +77,20 @@ class DonateController extends Controller
         }
 
         $donation = Donation::create([
-            'public_id' => (string) \Illuminate\Support\Str::uuid(),
+            'public_id' => (string) Str::uuid(),
             'campaign_id' => $campaign->id,
             'donor_id' => $donor?->id,
             'donor_name' => $data['donor_name'],
             'donor_email' => $data['donor_email'],
             'is_anonymous' => $data['is_anonymous'],
-
             'amount' => $data['amount'],
             'fees' => 0,
             'net_amount' => null,
             'currency' => $data['currency'],
-
             'payment_method' => $data['payment_method'],
             'status' => 'pending',
             'provider' => $data['payment_method'] === 'card' ? 'stripe' : 'wallet',
             'provider_ref' => null,
-
             'paid_at' => null,
             'refunded_at' => null,
         ]);

@@ -6,6 +6,10 @@
    Global Design System Tokens
 ------------------------------*/
 @layer base {
+    [x-cloak] {
+        display: none !important;
+    }
+
     :root {
         --bg: 247 243 234;
         --surface: 255 252 246;

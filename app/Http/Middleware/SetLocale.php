@@ -9,7 +9,15 @@ class SetLocale
 {
     public function handle(Request $request, Closure $next)
     {
-        $locale = $request->segment(1) === 'en' ? 'en' : 'ar';
+        if ($request->is('admin') || $request->is('admin/*')) {
+            $locale = session('admin_locale', 'ar');
+        } else {
+            $locale = $request->segment(1) === 'en' ? 'en' : 'ar';
+        }
+
+        if (!in_array($locale, ['ar', 'en'], true)) {
+            $locale = 'ar';
+        }
 
         app()->setLocale($locale);
 

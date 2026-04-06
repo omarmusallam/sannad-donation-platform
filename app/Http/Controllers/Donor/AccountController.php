@@ -25,22 +25,13 @@ class AccountController extends Controller
 
         $stats = [
             'total_donations' => (clone $baseQuery)->count(),
-
-            'paid_donations' => (clone $baseQuery)
-                ->where('status', 'paid')
-                ->count(),
-
-            'total_amount' => (clone $baseQuery)
-                ->where('status', 'paid')
-                ->sum('amount'),
-
+            'paid_donations' => (clone $baseQuery)->where('status', 'paid')->count(),
+            'total_amount' => (clone $baseQuery)->where('status', 'paid')->sum('amount'),
             'campaigns_supported' => (clone $baseQuery)
                 ->whereNotNull('campaign_id')
                 ->distinct('campaign_id')
                 ->count('campaign_id'),
-
-            'last_donation_at' => (clone $baseQuery)->max('paid_at')
-                ?: (clone $baseQuery)->max('created_at'),
+            'last_donation_at' => (clone $baseQuery)->max('paid_at') ?: (clone $baseQuery)->max('created_at'),
         ];
 
         $statusSummary = (clone $baseQuery)

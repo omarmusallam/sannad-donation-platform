@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 class Donation extends Model
@@ -17,20 +17,16 @@ class Donation extends Model
         'donor_name',
         'donor_email',
         'is_anonymous',
-
         'amount',
         'fees',
         'net_amount',
         'currency',
-
-        'payment_method',   // card | usdt_trc20
-        'status',           // pending | paid | failed | refunded
-        'provider',         // stripe | wallet
-        'provider_ref',     // stripe session id or tx reference
-
+        'payment_method',
+        'status',
+        'provider',
+        'provider_ref',
         'paid_at',
         'refunded_at',
-
         'crypto_network',
         'crypto_wallet_address',
         'crypto_tx_hash',
@@ -49,11 +45,6 @@ class Donation extends Model
         'crypto_submitted_at' => 'datetime',
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | Relations
-    |--------------------------------------------------------------------------
-    */
     public function campaign()
     {
         return $this->belongsTo(Campaign::class);
@@ -69,11 +60,6 @@ class Donation extends Model
         return $this->hasOne(Receipt::class);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Scopes
-    |--------------------------------------------------------------------------
-    */
     public function scopePaid(Builder $q): Builder
     {
         return $q->where('status', 'paid');
@@ -81,7 +67,6 @@ class Donation extends Model
 
     public function scopePaidDateBetween(Builder $q, $from, $to): Builder
     {
-        // prefer paid_at; fallback created_at
         return $q->whereBetween(DB::raw('COALESCE(paid_at, created_at)'), [$from, $to]);
     }
 
@@ -90,23 +75,16 @@ class Donation extends Model
         return $q->where('donor_id', $donorId);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Accessors
-    |--------------------------------------------------------------------------
-    */
     public function getDisplayDonorNameAttribute(): string
     {
         if ($this->is_anonymous) {
             return app()->getLocale() === 'en' ? 'Anonymous' : 'مجهول';
         }
 
-        // snapshot first
         if (!empty($this->donor_name)) {
             return $this->donor_name;
         }
 
-        // fallback to donor account
         if ($this->relationLoaded('donor') ? $this->donor : $this->donor()->exists()) {
             return $this->donor?->name ?: (app()->getLocale() === 'en' ? 'Donor' : 'متبرع');
         }
@@ -116,7 +94,9 @@ class Donation extends Model
 
     public function getDisplayDonorEmailAttribute(): ?string
     {
-        if ($this->is_anonymous) return null;
+        if ($this->is_anonymous) {
+            return null;
+        }
 
         return $this->donor_email ?: $this->donor?->email;
     }

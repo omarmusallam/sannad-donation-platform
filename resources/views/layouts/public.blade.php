@@ -1,4 +1,4 @@
-﻿{{-- resources/views/layouts/public.blade.php --}}
+{{-- resources/views/layouts/public.blade.php --}}
 <!doctype html>
 <html lang="{{ app()->getLocale() }}" dir="{{ app()->isLocale('ar') ? 'rtl' : 'ltr' }}" class="scrollbar-thin">
 
@@ -897,4 +897,3 @@
 </body>
 
 </html>
-

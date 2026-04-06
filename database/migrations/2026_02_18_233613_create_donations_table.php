@@ -12,23 +12,18 @@ return new class extends Migration {
 
             $table->foreignId('campaign_id')->constrained()->cascadeOnDelete();
 
-            // بيانات المتبرع (حد أدنى)
             $table->string('donor_name')->nullable();
             $table->string('donor_email')->nullable();
             $table->boolean('is_anonymous')->default(false);
 
-            // المبلغ
             $table->decimal('amount', 14, 2);
             $table->decimal('fees', 14, 2)->default(0);
             $table->decimal('net_amount', 14, 2)->nullable();
-
             $table->string('currency', 3)->default('USD');
 
-            // الدفع (الآن Mock / لاحقًا Gateway)
-            $table->enum('payment_method', ['manual', 'mock'])->default('mock');
-            $table->enum('status', ['pending', 'paid', 'failed', 'refunded'])->default('pending');
+            $table->enum('payment_method', ['card', 'usdt_trc20'])->default('card');
+            $table->enum('status', ['pending', 'pending_crypto_review', 'paid', 'failed', 'refunded'])->default('pending');
 
-            // مرجع خارجي (بوابة دفع لاحقًا)
             $table->string('provider')->nullable();
             $table->string('provider_ref')->nullable();
 

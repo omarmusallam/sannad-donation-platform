@@ -23,9 +23,9 @@ return new class extends Migration
                     ->update(['public_id' => (string) Str::uuid()]);
             });
 
-        Schema::table('donations', function (Blueprint $table) {
-            $table->uuid('public_id')->nullable(false)->change();
-        });
+        if (DB::connection()->getDriverName() !== 'sqlite') {
+            DB::statement('ALTER TABLE donations MODIFY public_id CHAR(36) NOT NULL');
+        }
     }
 
     public function down(): void

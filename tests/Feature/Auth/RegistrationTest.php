@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
-use App\Providers\RouteServiceProvider;
+use App\Models\Donor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -12,21 +12,39 @@ class RegistrationTest extends TestCase
 
     public function test_registration_screen_can_be_rendered(): void
     {
-        $response = $this->get('/register');
-
-        $response->assertStatus(200);
+        $this->get('/register')->assertOk();
     }
 
-    public function test_new_users_can_register(): void
+    public function test_new_donors_can_register(): void
     {
         $response = $this->post('/register', [
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
+            'name' => 'Test Donor',
+            'email' => 'donor@example.com',
+            'password' => 'SecurePass123!',
+            'password_confirmation' => 'SecurePass123!',
         ]);
 
-        $this->assertAuthenticated();
-        $response->assertRedirect(RouteServiceProvider::HOME);
+        $this->assertAuthenticated('donor');
+        $response->assertRedirect('/account');
+        $this->assertDatabaseHas('donors', ['email' => 'donor@example.com']);
+    }
+
+    public function test_registered_donor_email_must_be_unique(): void
+    {
+        Donor::create([
+            'name' => 'Existing Donor',
+            'email' => 'donor@example.com',
+            'password' => bcrypt('SecurePass123!'),
+        ]);
+
+        $response = $this->from('/register')->post('/register', [
+            'name' => 'Another Donor',
+            'email' => 'donor@example.com',
+            'password' => 'SecurePass123!',
+            'password_confirmation' => 'SecurePass123!',
+        ]);
+
+        $response->assertRedirect('/register');
+        $response->assertSessionHasErrors('email');
     }
 }

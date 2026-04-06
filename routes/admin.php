@@ -1,6 +1,8 @@
 <?php
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 
 use App\Http\Controllers\Admin\CampaignController as AdminCampaignController;
 use App\Http\Controllers\Admin\CampaignUpdateController as AdminCampaignUpdateController;
@@ -17,6 +19,20 @@ Route::prefix('admin')
     ->name('admin.')
     ->middleware(['auth:admin', 'role:admin|super_admin|editor|finance,admin'])
     ->group(function () {
+        Route::get('locale/{locale}', function (Request $request, string $locale) {
+            abort_unless(in_array($locale, ['ar', 'en'], true), 404);
+
+            session(['admin_locale' => $locale]);
+            app()->setLocale($locale);
+
+            $redirect = (string) $request->query('redirect', route('admin.home'));
+
+            if (!Str::startsWith($redirect, ['/admin', 'admin'])) {
+                $redirect = route('admin.home');
+            }
+
+            return redirect()->to($redirect);
+        })->name('locale.switch');
 
         /*
         |--------------------------------------------------------------------------

@@ -6,12 +6,18 @@ use App\Http\Controllers\Controller;
 use App\Models\Campaign;
 use App\Models\Donation;
 use App\Models\Report;
+use Illuminate\Support\Facades\DB;
 
 
 class HomeController extends Controller
 {
     public function index()
     {
+        $driver = DB::connection()->getDriverName();
+        $anonymousKeyExpression = $driver === 'sqlite'
+            ? "COUNT(DISTINCT COALESCE(NULLIF(donor_email,''), 'anon#' || id)) as c"
+            : "COUNT(DISTINCT COALESCE(NULLIF(donor_email,''), CONCAT('anon#', id))) as c";
+
         // ===== KPIs =====
         $paidAgg = Donation::query()
             ->where('status', 'paid')
@@ -24,7 +30,7 @@ class HomeController extends Controller
 
         $donorsCount = (int) Donation::query()
             ->where('status', 'paid')
-            ->selectRaw("COUNT(DISTINCT COALESCE(NULLIF(donor_email,''), CONCAT('anon#', id))) as c")
+            ->selectRaw($anonymousKeyExpression)
             ->value('c');
 
         $avgDonation = $paidCount > 0 ? round($totalPaid / $paidCount, 2) : 0;

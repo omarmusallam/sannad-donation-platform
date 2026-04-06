@@ -8,6 +8,12 @@
 
     @php
         $isAr = app()->isLocale('ar');
+        $nextLocale = $isAr ? 'en' : 'ar';
+        $localeButtonLabel = __('admin.switch_to_english');
+        $localeSwitchUrl = route('admin.locale.switch', [
+            'locale' => $nextLocale,
+            'redirect' => request()->getRequestUri(),
+        ]);
 
         // Minimal safe fallback: prefer a real `setting()` helper in backend.
         $setting = function (string $key, $default = null) {
@@ -20,11 +26,11 @@
 
         $siteName = (string) $setting('site.name', config('app.name', 'GazaSannad'));
         $metaTitle = (string) $setting('seo.meta_title', $siteName);
-        $metaDesc = (string) $setting('seo.meta_description', $isAr ? 'لوحة تحكم المنصة' : 'Admin panel');
+        $metaDesc = (string) $setting('seo.meta_description', __('admin.panel'));
         $faviconPath = $setting('site.favicon');
         $logoPath = $setting('site.logo');
 
-        $pageTitle = trim($__env->yieldContent('title', $isAr ? 'لوحة التحكم' : 'Admin'));
+        $pageTitle = trim($__env->yieldContent('title', __('admin.panel')));
         $fullTitle = trim($pageTitle . ' - ' . $metaTitle);
 
         /**
@@ -33,70 +39,70 @@
          */
         $nav = [
             [
-                'label' => $isAr ? 'الداشبورد' : 'Dashboard',
+                'label' => __('admin.dashboard'),
                 'base' => 'admin.home',
                 'href' => 'admin.home',
                 'icon' => 'home',
                 'can' => 'dashboard.view',
             ],
             [
-                'label' => $isAr ? 'الحملات' : 'Campaigns',
+                'label' => __('admin.campaigns'),
                 'base' => 'admin.campaigns',
                 'href' => 'admin.campaigns.index',
                 'icon' => 'flag',
                 'can' => 'campaigns.view',
             ],
             [
-                'label' => $isAr ? 'التبرعات' : 'Donations',
+                'label' => __('admin.donations'),
                 'base' => 'admin.donations',
                 'href' => 'admin.donations.index',
                 'icon' => 'money',
                 'can' => 'donations.view',
             ],
             [
-                'label' => $isAr ? 'الإيصالات' : 'Receipts',
+                'label' => __('admin.receipts'),
                 'base' => 'admin.receipts',
                 'href' => 'admin.receipts.index',
                 'icon' => 'receipt',
                 'can' => 'receipts.view',
             ],
             [
-                'label' => $isAr ? 'التقارير' : 'Reports',
+                'label' => __('admin.reports'),
                 'base' => 'admin.reports',
                 'href' => 'admin.reports.index',
                 'icon' => 'doc',
                 'can' => 'reports.view',
             ],
             [
-                'label' => $isAr ? 'التقارير المالية' : 'Finance Reports',
+                'label' => __('admin.finance_reports'),
                 'base' => 'admin.finance_reports',
                 'href' => 'admin.finance_reports.index',
                 'icon' => 'chart',
                 'can' => 'finance_reports.view',
             ],
             [
-                'label' => $isAr ? 'المستخدمون' : 'Users',
+                'label' => __('admin.users'),
                 'base' => 'admin.users',
                 'href' => 'admin.users.index',
                 'icon' => 'users',
                 'can' => 'users.manage',
             ],
             [
-                'label' => $isAr ? 'الأدوار' : 'Roles',
+                'label' => __('admin.roles'),
                 'base' => 'admin.roles',
                 'href' => 'admin.roles.index',
                 'icon' => 'shield',
                 'can' => 'roles.manage',
             ],
             [
-                'label' => $isAr ? 'الصفحات' : 'Pages',
+                'label' => __('admin.pages'),
                 'base' => 'admin.pages',
                 'href' => 'admin.pages.index',
                 'icon' => 'pages',
                 'can' => 'pages.view',
             ],
             [
-                'label' => $isAr ? 'الإعدادات' : 'Settings',
+                'label' => __('admin.settings'),
                 'base' => 'admin.settings',
                 'href' => 'admin.settings.edit',
                 'icon' => 'settings',
@@ -166,7 +172,7 @@
 </head>
 
 <body class="bg-slate-50 text-slate-900 selection:bg-slate-900 selection:text-white">
-    <div class="min-h-screen flex" x-data="{ sidebarOpen: false, userMenu: false }">
+    <div class="min-h-screen flex" x-data="{ sidebarOpen: false }">
 
         {{-- Mobile overlay --}}
         <div x-show="sidebarOpen" class="fixed inset-0 bg-slate-900/50 z-30 lg:hidden" x-transition.opacity
@@ -193,25 +199,25 @@
                         </div>
 
                         <div class="min-w-0">
-                            <div class="text-xs text-slate-500">{{ $isAr ? 'منصة' : 'Platform' }}</div>
+                            <div class="text-xs text-slate-500">{{ __('admin.platform') }}</div>
                             <div class="text-lg font-extrabold tracking-tight truncate">{{ $siteName }}</div>
                         </div>
                     </div>
 
                     <span class="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200/70">
-                        {{ $isAr ? 'إدارة' : 'Admin' }}
+                        {{ __('admin.admin') }}
                     </span>
                 </div>
 
                 <button type="button"
                     class="mt-4 lg:hidden w-full px-3 py-2 rounded-2xl border border-slate-200 hover:bg-slate-50 text-sm font-semibold"
                     @click="sidebarOpen=false">
-                    {{ $isAr ? 'إغلاق القائمة' : 'Close menu' }}
+                    {{ __('admin.close_menu') }}
                 </button>
             </div>
 
             {{-- Nav --}}
-            <nav class="p-4 space-y-1" aria-label="{{ $isAr ? 'قائمة الإدارة' : 'Admin navigation' }}">
+            <nav class="p-4 space-y-1" aria-label="{{ __('admin.panel') }}">
                 @foreach ($nav as $item)
                     @php
                         $active = $isActive($item['base']);
@@ -244,7 +250,7 @@
                             @if ($active)
                                 <span
                                     class="relative ms-auto text-xs px-2 py-1 rounded-full bg-white/10 ring-1 ring-white/15">
-                                    {{ $isAr ? 'نشط' : 'Active' }}
+                                    {{ __('admin.active') }}
                                 </span>
                             @endif
                         </a>
@@ -256,15 +262,15 @@
             <div class="p-4 border-t border-slate-200/70 mt-4 space-y-3">
                 <a href="{{ route('home') }}"
                     class="flex items-center justify-between px-3 py-2.5 rounded-2xl text-sm border border-slate-200 hover:bg-slate-50 transition">
-                    <span class="font-semibold">{{ $isAr ? 'العودة للموقع' : 'Back to site' }}</span>
-                    <span class="text-slate-500" aria-hidden="true">↗</span>
+                    <span class="font-semibold">{{ __('admin.back_to_site') }}</span>
+                    <span class="text-slate-500" aria-hidden="true">â†—</span>
                 </a>
 
                 <form method="POST" action="{{ route('admin.logout') }}">
                     @csrf
                     <button type="submit"
                         class="w-full px-3 py-2.5 rounded-2xl text-sm bg-rose-50 text-rose-700 hover:bg-rose-100 transition font-semibold border border-rose-200/60">
-                        {{ $isAr ? 'تسجيل الخروج' : 'Logout' }}
+                        {{ __('admin.logout') }}
                     </button>
                 </form>
             </div>
@@ -281,14 +287,14 @@
                         <div class="flex items-center gap-3 min-w-0">
                             <button type="button"
                                 class="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-2xl border border-slate-200 hover:bg-slate-50"
-                                @click="sidebarOpen=true" aria-label="{{ $isAr ? 'فتح القائمة' : 'Open menu' }}">
-                                ☰
+                                @click="sidebarOpen=true" aria-label="{{ __('admin.open_menu') }}">
+                                â˜°
                             </button>
 
                             <div class="min-w-0">
-                                <div class="text-xs text-slate-500">{{ $isAr ? 'لوحة التحكم' : 'Admin Panel' }}</div>
+                                <div class="text-xs text-slate-500">{{ __('admin.panel') }}</div>
                                 <div class="text-lg font-extrabold tracking-tight truncate">
-                                    @yield('page_title', $isAr ? 'مرحبًا' : 'Welcome')
+                                    @yield('page_title', __('admin.welcome'))
                                 </div>
                             </div>
                         </div>
@@ -296,27 +302,33 @@
                         <div class="flex items-center gap-2">
                             @yield('page_actions')
 
+                            <a href="{{ $localeSwitchUrl }}"
+                                class="inline-flex items-center justify-center min-w-[3.25rem] px-3 py-2 rounded-2xl border border-slate-200 bg-white text-sm font-semibold hover:bg-slate-50 transition"
+                                aria-label="{{ __('admin.switch_language') }}">
+                                {{ $localeButtonLabel }}
+                            </a>
+
                             {{-- User menu --}}
-                            <div class="relative">
+                            <div class="relative" data-admin-user-menu>
                                 <button type="button"
                                     class="px-3 py-2 rounded-2xl border border-slate-200 hover:bg-slate-50 text-sm font-semibold"
-                                    @click="userMenu=!userMenu" :aria-expanded="userMenu.toString()"
+                                    data-admin-user-menu-toggle aria-expanded="false"
                                     aria-haspopup="menu">
                                     {{ auth()->user()->name ?? ($isAr ? 'المدير' : 'Admin') }} ▾
                                 </button>
 
-                                <div x-show="userMenu" @click.outside="userMenu=false" x-transition
+                                <div data-admin-user-menu-panel hidden
                                     class="absolute {{ $isAr ? 'left-0' : 'right-0' }} mt-2 w-56 bg-white border border-slate-200 rounded-2xl shadow-lg overflow-hidden"
                                     role="menu">
                                     <a href="{{ route('home') }}" class="block px-4 py-3 text-sm hover:bg-slate-50"
                                         role="menuitem">
-                                        {{ $isAr ? 'زيارة الموقع' : 'Visit site' }}
+                                        {{ __('admin.visit_site') }}
                                     </a>
 
                                     @can('settings.manage')
                                         <a href="{{ route('admin.settings.edit') }}"
                                             class="block px-4 py-3 text-sm hover:bg-slate-50" role="menuitem">
-                                            {{ $isAr ? 'إعدادات الموقع' : 'Site Settings' }}
+                                            {{ __('admin.site_settings') }}
                                         </a>
                                     @endcan
 
@@ -327,7 +339,7 @@
                                         <button type="submit"
                                             class="w-full text-{{ $isAr ? 'right' : 'left' }} px-4 py-3 text-sm hover:bg-rose-50 text-rose-700"
                                             role="menuitem">
-                                            {{ $isAr ? 'تسجيل الخروج' : 'Logout' }}
+                                            {{ __('admin.logout') }}
                                         </button>
                                     </form>
                                 </div>
@@ -343,21 +355,21 @@
                 {{-- Flash messages --}}
                 @if (session('success'))
                     <div class="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900">
-                        <div class="font-bold">{{ $isAr ? 'تم بنجاح' : 'Success' }}</div>
+                        <div class="font-bold">{{ __('admin.success') }}</div>
                         <div class="text-sm mt-1">{{ session('success') }}</div>
                     </div>
                 @endif
 
                 @if (session('error'))
                     <div class="mb-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-900">
-                        <div class="font-bold">{{ $isAr ? 'حدث خطأ' : 'Error' }}</div>
+                        <div class="font-bold">{{ __('admin.error') }}</div>
                         <div class="text-sm mt-1">{{ session('error') }}</div>
                     </div>
                 @endif
 
                 @if ($errors->any())
                     <div class="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
-                        <div class="font-bold">{{ $isAr ? 'تحقق من المدخلات' : 'Please check your inputs' }}</div>
+                        <div class="font-bold">{{ __('admin.check_inputs') }}</div>
                         <ul class="text-sm mt-2 list-disc px-5">
                             @foreach ($errors->all() as $e)
                                 <li>{{ $e }}</li>
@@ -372,6 +384,73 @@
 
     </div>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const menus = document.querySelectorAll('[data-admin-user-menu]');
+
+            if (!menus.length) return;
+
+            const closeMenu = (menu) => {
+                const panel = menu.querySelector('[data-admin-user-menu-panel]');
+                const button = menu.querySelector('[data-admin-user-menu-toggle]');
+
+                if (!panel || !button) return;
+
+                panel.hidden = true;
+                button.setAttribute('aria-expanded', 'false');
+            };
+
+            const openMenu = (menu) => {
+                menus.forEach((item) => {
+                    if (item !== menu) closeMenu(item);
+                });
+
+                const panel = menu.querySelector('[data-admin-user-menu-panel]');
+                const button = menu.querySelector('[data-admin-user-menu-toggle]');
+
+                if (!panel || !button) return;
+
+                panel.hidden = false;
+                button.setAttribute('aria-expanded', 'true');
+            };
+
+            menus.forEach((menu) => {
+                const button = menu.querySelector('[data-admin-user-menu-toggle]');
+                const panel = menu.querySelector('[data-admin-user-menu-panel]');
+
+                if (!button || !panel) return;
+
+                button.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    if (panel.hidden) {
+                        openMenu(menu);
+                    } else {
+                        closeMenu(menu);
+                    }
+                });
+
+                panel.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                });
+            });
+
+            document.addEventListener('click', (event) => {
+                menus.forEach((menu) => {
+                    if (!menu.contains(event.target)) {
+                        closeMenu(menu);
+                    }
+                });
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    menus.forEach(closeMenu);
+                }
+            });
+        });
+    </script>
     @stack('scripts')
 </body>
 
